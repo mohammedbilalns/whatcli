@@ -1,0 +1,36 @@
+{
+  "name": "whatcli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin":{"wacli": "dist/cli/main.js"},
+  "scripts": {
+    "dev": "tsx src/cli/main.ts",
+    "build":  "tsc",
+    "start":"node dist/cli/main.js",
+    "typecheck":"tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.5.1",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.5.1",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "commander": "^15.0.0",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3"
+  }
+}
