@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "bin":{"wacli": "dist/cli/main.js"},
+  "bin": {
+    "wacli": "dist/cli/main.js"
+  },
   "scripts": {
     "dev": "tsx src/cli/main.ts",
-    "build":  "tsc",
-    "start":"node dist/cli/main.js",
-    "typecheck":"tsc --noEmit"
+    "build": "tsc",
+    "start": "node dist/cli/main.js",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +25,7 @@
   "packageManager": "pnpm@12.5.1",
   "type": "module",
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
