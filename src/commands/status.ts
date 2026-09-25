@@ -11,6 +11,9 @@ export function registerStatusCommand(program: Command ): void {
     .action(() => status())
 }
 
+/**
+ * Checks the current WhatsApp connection status.
+ */
 async function status(): Promise<void>{
   const config = loadConfig()
   const {state, saveCreds}  = await useMultiFileAuthState(config.authDir)
@@ -18,6 +21,15 @@ async function status(): Promise<void>{
   console.log('Whatsapp')
   console.log('--------------')
 
+  /*
+   * Check whether we have a WhatsApp session.
+   *
+   * `registered` indicates that the credentials have
+   * been registered.
+   *
+   * `me?.id` indicates that Baileys knows which WhatsApp
+   * account these credentials belong to.
+   */
   const hasSession = state.creds.registered || !!state.creds.me?.id
 
   if(!hasSession){
@@ -26,10 +38,18 @@ async function status(): Promise<void>{
     process.exit(1)
   }
 
+ /*
+   * Try connecting to WhatsApp using the saved session.
+   */
   const {sock , outcome} = await connectAndWait(state, saveCreds, {
-    timoutMs: 30_000
+    timeoutMs: 30_000
   })
 
+  /*
+   * ─────────────────────────────────────────────
+   * CONNECTED
+   * ─────────────────────────────────────────────
+   */
   if(outcome.status === 'connected'){
     const me = state.creds.me
     console.log('Status: Connected')
@@ -44,7 +64,17 @@ async function status(): Promise<void>{
     process.exit(1)
   }
 
+  /*
+   * ─────────────────────────────────────────────
+   * CONNECTION CLOSED
+   * ─────────────────────────────────────────────
+   */
 
+  /*
+   * `loggedOut` means the WhatsApp session was
+   * invalidated, so the saved credentials cannot
+   * be used anymore.
+   */
 
   if (outcome.code === DisconnectReason.loggedOut) {
     console.log('Status: Logged out (session invalidated from the phone)');

@@ -21,7 +21,7 @@ export type ConnectionOutCome =
 export interface ConnectOptions {
   // Called whenever Baileys provides a QR code for authentication.
   onQr?: (qr: string) => void
-  timoutMs?: number
+  timeoutMs?: number
 }
 
 /**
@@ -73,7 +73,7 @@ export async function connectAndWait(
 
       })
 
-      setTimeout(() => resolve({status: 'timeout'}), options.timoutMs ?? 60_000).unref()
+      setTimeout(() => resolve({status: 'timeout'}), options.timeoutMs ?? 60_000).unref()
     })
 
     if(outcome.status !== 'closed') return {sock, outcome}
