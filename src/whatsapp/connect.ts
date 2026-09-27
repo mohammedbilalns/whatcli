@@ -1,4 +1,4 @@
-import { AuthenticationState, DisconnectReason } from "@whiskeysockets/baileys";
+import { AuthenticationState, DisconnectReason, WASocket } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import { createWASocket } from "./socket.js";
 
@@ -24,64 +24,73 @@ export interface ConnectOptions {
   timeoutMs?: number
 }
 
-/**
- * Creates a WhatsApp connection and waits until the connection
- * succeeds, closes, or times out.
- */
-export async function connectAndWait(
-  auth : AuthenticationState,
 
-  // Function to Persist updated whatsapp credentials. 
-  saveCreds : () => Promise<void> | void ,
 
-  // optional connection configuration. 
-  options : ConnectOptions = {}
-){
+/** Extract close reason. */
+function extractClose(lastDisconnect: {error?: unknown} | undefined): {code: number, error?: Error}{
+  const boom = lastDisconnect?.error as Boom | undefined
+  return {
+    code : boom?.output?.statusCode ?? -1,
+    error : boom ?? (lastDisconnect?.error as Error | undefined)
+  }
+}
 
-  const MAX_RESTARTS = 5
 
-  for(let attempt = 0; ; attempt++){
-    const sock = createWASocket(auth)
+/** Create a socket and wire save creds. */
+export function createSocket(
+  auth: AuthenticationState,
+  saveCreds: () => Promise<void> | void 
+): WASocket{
+  const sock = createWASocket(auth)
+  sock.ev.on('creds.update', saveCreds)
+  return sock 
+}
 
-    // update the authentication credentials whenever the authentication state changes. 
-    sock.ev.on('creds.update', saveCreds)
 
-    // Promise that resolve when Baileys tells us what happened to the connection 
-    const outcome = await new Promise<ConnectionOutCome>((resolve) => {
-
-      // Listen for changes in the Whatsapp connection 
-      sock.ev.on('connection.update', (update)=> {
-        const { connection, lastDisconnect, qr} = update
-
-        // If it requires QR authentication  pass the QR string 
-        if(qr) options.onQr?.(qr)
-
-        if(connection ===  'open') {
-          resolve({status : 'connected'})
-
-        }else if(connection === 'close'){
-
-          // Disconnect boom error 
-          const boom = lastDisconnect?.error as Boom | undefined
-
-          resolve({
-            status: 'closed',
-            code : boom?.output?.statusCode ?? -1,
-            error : boom ?? lastDisconnect?.error
-          })
-        }
-
-      })
-
-      setTimeout(() => resolve({status: 'timeout'}), options.timeoutMs ?? 60_000).unref()
+/** Wait for the connection update event until timeout . */
+export function awaitOpenOrClose(sock : WASocket, options: ConnectOptions) : Promise<ConnectionOutCome>{
+  return new Promise((resolve) => {
+    sock.ev.on('connection.update', (update) => {
+      const {connection, lastDisconnect, qr} = update
+      if(qr) options.onQr?.(qr)
+      if(connection === "open"){
+        resolve({status: "connected"})
+      }else if(connection === 'close'){
+        resolve({status: 'closed',...extractClose(lastDisconnect)})
+      }
     })
 
-    if(outcome.status !== 'closed') return {sock, outcome}
-    if(outcome.code === DisconnectReason.restartRequired && attempt < MAX_RESTARTS){
-      continue
-    }
+    setTimeout(() => resolve({ status: 'timeout' }), options.timeoutMs ?? 60_000).unref();
+  })
+}
 
 
-    return {sock , outcome}
+/**
+ * Wait for the NEXT connection close event on an already-open socket.
+ */
+export function nextClose(sock: WASocket): Promise<{code: number; error?: Error}>{
+  return new Promise((resolve) => {
+    sock.ev.on('connection.update',(update) => {
+      if(update.connection === "close") resolve(extractClose(update.lastDisconnect))
+    } )
+  })
+}
+
+/**
+ * Creates a socket, waits for it to open (or fail/timeout), and handles the
+ * specific case where WhatsApp requests a client restart (code 515)
+ */
+export async function connectAndWait(
+  auth: AuthenticationState,
+  saveCreds: () => Promise<void> | void,
+  options: ConnectOptions = {},
+): Promise<{ sock: WASocket; outcome: ConnectionOutCome }> {
+  const MAX_RESTARTS = 5;
+  for (let attempt = 0; ; attempt++) {
+    const sock = createSocket(auth, saveCreds);
+    const outcome = await awaitOpenOrClose(sock, options);
+    if (outcome.status !== 'closed') return { sock, outcome };
+    if (outcome.code === DisconnectReason.restartRequired && attempt < MAX_RESTARTS) continue;
+    return { sock, outcome };
   }
 }

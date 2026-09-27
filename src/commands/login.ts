@@ -4,6 +4,7 @@ import qrcode from "qrcode-terminal"
 import { DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
+import { rmSync } from "node:fs";
 
 export function registerLoginCommand(program : Command): void {
 
@@ -99,9 +100,9 @@ async function login(): Promise<void> {
    * can no longer be used.
    */
   if(outcome.code === DisconnectReason.loggedOut){
-    console.log(`\n The saved session was logged out. Reset it and re-scan`)
-    console.log(`rm -rf ${config.authDir}`)
-    console.log(`pnpm dev login`)
+    console.log('\nSaved session is invalid — wiping it and starting a fresh login.');
+    rmSync(config.authDir, { recursive: true, force: true });
+    return login(); // empty auth dir now → fresh state → QR code
   }else {
     console.log(`\n Connection closed (code ${outcome.code}): ${outcome.error?.message ?? 'unknow'}`)
   } 
