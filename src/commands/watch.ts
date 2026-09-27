@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { useMultiFileAuthState } from '@whiskeysockets/baileys';
 import { loadConfig } from '../utils/config.js';
 import { WhatsAppManager } from '../whatsapp/manager.js';
+import { registerMessagePrinter } from '../whatsapp/messages.js';
 
 export function registerWatchCommand(program: Command): void {
   program
@@ -38,7 +39,6 @@ async function watch(): Promise<void> {
   });
 
   // onSocket() demo: this fires on EVERY socket, including post-reconnect ones.
-  // Phase 3's message listener registers here — same one line.
   manager.onSocket((sock) => {
     sock.ev.on('connection.update', (u) => {
       if (u.receivedPendingNotifications) log('history sync complete');

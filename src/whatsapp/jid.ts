@@ -9,3 +9,7 @@ export function phoneFromJid(jid: string): string {
   // If extraction fails, return the original JID
   return user ? `+${user}` : jid
 }
+
+export function isLid(jid: string): boolean {
+  return jid.endsWith('@lid');
+}
