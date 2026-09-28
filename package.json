@@ -10,7 +10,8 @@
     "dev": "tsx src/cli/main.ts",
     "build": "tsc",
     "start": "node dist/cli/main.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -29,7 +30,8 @@
     "@types/node": "^26.6.2",
     "@types/qrcode-terminal": "^0.12.2",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
