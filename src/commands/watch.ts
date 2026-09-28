@@ -2,7 +2,8 @@ import type { Command } from 'commander';
 import { useMultiFileAuthState } from '@whiskeysockets/baileys';
 import { loadConfig } from '../utils/config.js';
 import { WhatsAppManager } from '../whatsapp/manager.js';
-import { registerMessagePrinter } from '../whatsapp/messages.js';
+import { registerMessageListener } from '../whatsapp/messages.js';
+import { formatMessage } from '../utils/format.js';
 
 export function registerWatchCommand(program: Command): void {
   program
@@ -38,8 +39,9 @@ async function watch(): Promise<void> {
     },
   });
 
-  // onSocket() demo: this fires on EVERY socket, including post-reconnect ones.
+  // fires on EVERY socket, including post-reconnect ones.
   manager.onSocket((sock) => {
+    registerMessageListener(sock, (message) => console.log(formatMessage(message)))
     sock.ev.on('connection.update', (u) => {
       if (u.receivedPendingNotifications) log('history sync complete');
     });
