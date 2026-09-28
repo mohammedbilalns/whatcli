@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { rmSync } from 'node:fs';
 import { loadConfig } from "../utils/config.js";
 import { DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import { connectAndWait } from "../whatsapp/connect.js";
@@ -78,7 +79,9 @@ async function status(): Promise<void>{
 
   if (outcome.code === DisconnectReason.loggedOut) {
     console.log('Status: Logged out (session invalidated from the phone)');
-    console.log(`Fix:    rm -rf ${config.authDir} && wacli login`);
+    rmSync(config.authDir, { recursive: true, force: true });
+    console.log('Local credentials deleted.');
+    console.log('Run "wacli login" to connect again.');
   } else {
     console.log(`Status: Disconnected (code ${outcome.code})`);
     console.log(`Reason: ${outcome.error?.message ?? 'unknown'}`);
