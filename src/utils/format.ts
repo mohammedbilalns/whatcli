@@ -1,5 +1,5 @@
+import { isJidGroup, jidDecode } from '@whiskeysockets/baileys';
 import type { Message } from '../models/message.js';
-import { isGroupChat } from '../models/message.js';
 import { phoneFromJid } from '../whatsapp/jid.js';
 
 /** Render a Message for the terminal
@@ -7,8 +7,8 @@ import { phoneFromJid } from '../whatsapp/jid.js';
 export function formatMessage(m: Message): string {
   const time = m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const sender = m.fromMe ? 'You' : m.pushName || phoneFromJid(m.senderId);
-  const chat = isGroupChat(m.chatId)
-    ? ` [group …${(m.chatId.split('@')[0] ?? '').slice(-4)}]`
+  const chat = isJidGroup(m.chatId)
+    ? ` [group …${( jidDecode(m.chatId)?.user ?? '').slice(-4)}]`
     : '';
   return `[${time}] ${sender}${chat} > ${describe(m)}`;
 }

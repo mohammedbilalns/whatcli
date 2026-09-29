@@ -1,15 +1,22 @@
+/**
+ * Responsible for staring the connection , watch it , decide what to do when it dies and handle retries , inform the app about what is happening , reattach handlers on reconnection 
+ */
 import { rmSync } from 'node:fs';
 import type { AuthenticationState, WASocket } from '@whiskeysockets/baileys';
 import { createSocket, awaitOpenOrClose, nextClose, type ConnectOptions } from './connect.js';
 import { decideReconnect, DEFAULT_POLICY, type ReconnectPolicy } from './reconnect.js';
 
+
+/**
+ * State indicating the live status of the connection 
+ */
 export type ManagerState =
-  | 'connecting'
-  | 'connected'
-  | 'reconnecting'
-  | 'waiting'
-  | 'stopped'
-  | 'logged-out';
+| 'connecting' // first time trying to connect 
+| 'connected' 
+| 'reconnecting' // Lost connection, trying to reconnect again 
+| 'waiting' // backing off... waiting before next retry 
+| 'stopped' 
+| 'logged-out'; // logged out from whatsapp server
 
 export interface ManagerOptions extends ConnectOptions {
   onStateChange?: (state: ManagerState, detail?: string) => void;
@@ -17,10 +24,15 @@ export interface ManagerOptions extends ConnectOptions {
 }
 
 export class WhatsAppManager {
+  // list of handlers to attach when a new socket appears 
   private socketHandlers: Array<(sock: WASocket) => void> = [];
+  // shutdown flag( to terminate the loop)
   private stopping = false;
+  // socket that is alive right now 
   private currentSocket?: WASocket;
+  // Promise that resolvs when the manager fully stops.
   private run?: Promise<void>;
+  // 
   private wake?: () => void;
 
   constructor(private readonly options: ManagerOptions = {}) {}
@@ -30,6 +42,7 @@ export class WhatsAppManager {
     this.socketHandlers.push(handler);
   }
 
+  // start the connection loop
   async start(auth: AuthenticationState, saveCreds: () => Promise<void> | void, authDir: string): Promise<void> {
     this.run = this.loop(auth, saveCreds, authDir);
     await this.run;
@@ -108,7 +121,10 @@ export class WhatsAppManager {
   /** Sleep that can be interrupted by stop(). */
   private sleepInterruptible(ms: number): Promise<void> {
     return new Promise((resolve) => {
-      const timer = setTimeout(() => { this.wake = undefined; resolve(); }, ms);
+      const timer = setTimeout(() => {
+        this.wake = undefined; 
+        resolve(); 
+      }, ms);
       this.wake = () => { clearTimeout(timer); resolve(); };
     });
   }

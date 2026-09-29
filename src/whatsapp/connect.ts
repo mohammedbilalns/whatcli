@@ -50,8 +50,10 @@ export function createSocket(
 /** Wait for the connection update event until timeout . */
 export function awaitOpenOrClose(sock : WASocket, options: ConnectOptions) : Promise<ConnectionOutCome>{
   return new Promise((resolve) => {
+    // listen for connectino updates 
     sock.ev.on('connection.update', (update) => {
       const {connection, lastDisconnect, qr} = update
+      // if qr code recieved call the handler to show it in terminal
       if(qr) options.onQr?.(qr)
       if(connection === "open"){
         resolve({status: "connected"})

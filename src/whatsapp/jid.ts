@@ -1,15 +1,13 @@
+import { isJidGroup, jidDecode} from "@whiskeysockets/baileys";
 
 export function phoneFromJid(jid: string): string {
-
-  // Extract the user/phone part from the WhatsApp JID.
-  const user = jid.split('@')[0]?.split(':')[0];
-
-
-  // Add "+" to make it a phone number format.
-  // If extraction fails, return the original JID
+  const user = jidDecode(jid)?.user;
   return user ? `+${user}` : jid
 }
 
-export function isLid(jid: string): boolean {
-  return jid.endsWith('@lid');
+/** Human label for any chat. */
+export function jidLabel(jid: string): string {
+  if (isJidGroup(jid)) return `group …${(jidDecode(jid)?.user ?? '').slice(-4)}`;
+  return phoneFromJid(jid);
 }
+
