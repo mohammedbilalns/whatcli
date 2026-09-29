@@ -26,10 +26,3 @@ export interface Message {
   pushName?: string;
 }
 
-export function isGroupMessage(msg: Message): boolean {
-  return msg.chatId.endsWith('@g.us');
-}
-
-export function isGroupChat(chatId: string): boolean {
-  return chatId.endsWith('@g.us');
-}

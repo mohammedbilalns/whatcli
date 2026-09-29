@@ -9,6 +9,7 @@ import { registerStatusCommand } from "../commands/status.js";
 import { registerDoctorCommand } from "../commands/doctor.js";
 import { registerWatchCommand } from "../commands/watch.js";
 import { registerLogoutCommand } from "../commands/logout.js";
+import { registerChatsCommand } from "../commands/chats.js";
 
 
 
@@ -35,6 +36,7 @@ registerStatusCommand(program)
 registerDoctorCommand(program)
 registerWatchCommand(program)
 registerLogoutCommand(program)
+registerChatsCommand(program)
 
 
 await program.parseAsync(process.argv)
