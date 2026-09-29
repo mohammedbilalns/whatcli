@@ -54,7 +54,6 @@ async function watch(): Promise<void> {
     type EmitFn = (event: string, ...args: unknown[]) => boolean;
     const originalEmit = sock.ev.emit.bind(sock.ev) as EmitFn;
     sock.ev.emit = ((event: string, ...args: unknown[]) => {
-      if (event !== 'creds.update') console.log(`   [ev] ${event}`);
       return originalEmit(event, ...args);
     }) as unknown as typeof sock.ev.emit;
     registerMessageListener(sock, (message, {live}) =>{
