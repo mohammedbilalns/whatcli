@@ -1,26 +1,30 @@
-import type { WASocket } from '@whiskeysockets/baileys';
+import { isJidNewsletter, isJidStatusBroadcast, type WASocket } from '@whiskeysockets/baileys';
 import type { Message } from '../models/message.js';
 import { parseMessage } from './parser.js';
 
-export type MessageHandler = (message: Message) => void;
+export interface MessageContext {
+  /** true = live traffic; false = backfill that arrived while we were away */
+  live: boolean;
+}
+export type MessageHandler = (message: Message, context : MessageContext) => void;
 
 /**
  * Register a live-message listener on a socket.
  */
 export function registerMessageListener(sock: WASocket, onMessage: MessageHandler): void {
   sock.ev.on('messages.upsert', ({ messages, type }) => {
-    if (type !== 'notify') return; 
+    if (type !== 'notify' && type !== 'append') return;
+    const live = type === 'notify';
 
     for (const raw of messages) {
       if (process.env.WACLI_RAW) console.log(JSON.stringify(raw, null, 2));
 
-      // Non-chat traffic: status posts, newsletters
       const jid = raw.key?.remoteJid ?? '';
-      if (jid === 'status@broadcast' || jid.endsWith('@newsletter')) continue;
+
+      if(isJidStatusBroadcast(jid) || isJidNewsletter(jid)) continue
 
       const result = parseMessage(raw);
-      if (result.ok) onMessage(result.message);
-      // else: protocol sync / empty placeholder 
+      if (result.ok) onMessage(result.message, { live });
     }
   });
 }
