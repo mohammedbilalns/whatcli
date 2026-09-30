@@ -76,6 +76,7 @@ async function watch(): Promise<void> {
     sock.ev.on('connection.update', (u) => {
       if (u.receivedPendingNotifications) log('history sync complete');
     });
+
   });
 
   process.on('SIGINT', () => {

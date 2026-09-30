@@ -6,6 +6,7 @@ import { Database } from "better-sqlite3";
 import { Message } from "../models/message.js";
 import { HistoryBatch } from "../whatsapp/history.js";
 import { isJidGroup } from "@whiskeysockets/baileys";
+import { isGroupChat } from "../whatsapp/jid.js";
 
 export interface ChatRow {
   id: number;
@@ -15,6 +16,17 @@ export interface ChatRow {
   last_message_at: string | null;
 }
 
+export interface MessageRow {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  from_me: 0 | 1;
+  type: string;
+  text: string | null;
+  reply_to_id: string | null;  
+  timestamp: string;
+  push_name: string | null 
+}
 
 export class MessageStore {
 
@@ -39,12 +51,13 @@ export class MessageStore {
      update the last_message_at with the newest time 
      * */
     this.stmtChatFromMessage = db.prepare(`
-INSERT INTO chats (jid, type, name, last_message_at)
-VALUES (?, ?, ?, ?)
+INSERT INTO chats (jid, type, name, last_message_at, alt_jid)
+VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (jid) DO UPDATE SET
 name = COALESCE(chats.name, excluded.name),
-last_message_at = COALESCE(MAX(chats.last_message_at, excluded.last_message_at), excluded.last_message_at)
-`)
+last_message_at = COALESCE(MAX(chats.last_message_at, excluded.last_message_at), excluded.last_message_at),
+alt_jid = COALESCE(chats.alt_jid, excluded.alt_jid)
+`);
 
     /** 
      *Create new chat if the jid already exists update the name if if it not there  
@@ -84,9 +97,11 @@ updated_at = datetime('now')
     this.txIngest = this.db.transaction((batch: HistoryBatch): number => {
       let stored = 0;
       for (const c of batch.chats) {
-        this.stmtChatFromHistory.run(c.jid, isJidGroup(c.jid) ? 'group' : 'direct', c.name ?? null);
+        this.stmtChatFromHistory.run(c.jid, isGroupChat(c.jid) ? 'group' : 'direct', c.name ?? null);
       }
       for (const c of batch.contacts) {
+        if (isGroupChat(c.jid)) continue;
+        if (c.name && /^\+[\d∙]+$/.test(c.name)) c.name = undefined;
         this.stmtUpsertContact.run(c.jid, c.name ?? null);
       }
       for (const msg of batch.messages) {
@@ -138,10 +153,8 @@ ORDER BY last_message_at DESC`)
     const name = !msg.fromMe && !isJidGroup(msg.chatId) ? msg.pushName ?? null : null;
     // Run the prepared statement to upsert chat row 
     this.stmtChatFromMessage.run(
-      msg.chatId,
-      isJidGroup(msg.chatId) ? 'group' : 'direct',
-      name,
-      msg.timestamp.toISOString(),
+      msg.chatId, isGroupChat(msg.chatId) ? 'group' : 'direct',
+      name, msg.timestamp.toISOString(), msg.chatAltId ?? null,
     );
   }
 
@@ -161,4 +174,46 @@ ORDER BY last_message_at DESC`)
       push_name: msg.pushName ?? null,
     };
   }
+
+  /** Load a chat's messages, oldest first, most recent N. */
+  listMessages(chatJid: string, limit = 50): Message[] {
+    const rows = this.db
+      .prepare(`SELECT id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name
+FROM messages
+WHERE chat_id = ?
+ORDER BY timestamp DESC
+LIMIT ?`)
+      .all(chatJid, limit) as MessageRow[];
+
+    // newest-first from SQL → chronological for display
+    return rows.reverse().map((row) => ({
+      id: row.id,
+      chatId: row.chat_id,
+      senderId: row.sender_id,
+      fromMe: row.from_me === 1,
+      timestamp: new Date(row.timestamp),
+      type: row.type as Message['type'],
+      text: row.text ?? undefined,
+      replyToId: row.reply_to_id ?? undefined,
+      pushName: row.push_name ?? undefined,
+    }));
+
+  }
+
+  chatName(jid: string): string | null {
+    const row = this.db.prepare(`
+SELECT c.name AS own, ct.name AS contact, s.name AS sibling, sct.name AS sibling_contact
+FROM chats c
+LEFT JOIN contacts ct  ON ct.jid  = c.jid
+LEFT JOIN chats s      ON s.jid   = c.alt_jid
+LEFT JOIN contacts sct ON sct.jid = c.alt_jid
+WHERE c.jid = ?
+`).get(jid) as { own: string | null; contact: string | null; sibling: string | null; sibling_contact: string | null } | undefined;
+    return row?.own ?? row?.contact ?? row?.sibling ?? row?.sibling_contact ?? null;
+  }
+
+upsertContact(jid: string, name: string): void {
+  this.stmtUpsertContact.run(jid, name);
+}
+
 }

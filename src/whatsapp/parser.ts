@@ -2,8 +2,8 @@ import type { WAMessage } from '@whiskeysockets/baileys';
 import type { Message, MessageType } from '../models/message.js';
 
 export type ParseResult =
-  | { ok: true; message: Message }
-  | { ok: false; reason: 'protocol-only' | 'empty' };
+| { ok: true; message: Message }
+| { ok: false; reason: 'protocol-only' | 'empty' };
 
 type Content = NonNullable<WAMessage['message']>;
 
@@ -38,6 +38,8 @@ export function parseMessage(raw: WAMessage): ParseResult {
       text: classified.text,
       replyToId: classified.replyToId,
       pushName: raw.pushName || undefined,
+      chatAltId: key.remoteJidAlt || undefined,
+      senderAltId: (key.participantAlt as string | undefined) || key.remoteJidAlt || undefined,
     },
   };
 }
@@ -51,8 +53,8 @@ function unwrapContent(m: Content | null | undefined): Content | undefined {
     const record = current as Record<string, { message?: Content } | undefined>;
     const next =
       record.ephemeralMessage?.message ??
-      record.viewOnceMessage?.message ??
-      record.viewOnceMessageV2?.message;
+        record.viewOnceMessage?.message ??
+        record.viewOnceMessageV2?.message;
     if (!next) break;
     current = next;
   }
@@ -63,7 +65,7 @@ function isProtocolOnly(m: Content): boolean {
   const keys = Object.keys(m);
   return (
     keys.length > 0 &&
-    keys.every((k) => k === 'senderKeyDistributionMessage' || k === 'messageContextInfo')
+      keys.every((k) => k === 'senderKeyDistributionMessage' || k === 'messageContextInfo')
   );
 }
 

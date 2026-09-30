@@ -1,14 +1,13 @@
-import { isJidGroup, jidDecode } from '@whiskeysockets/baileys';
 import type { Message } from '../models/message.js';
-import { phoneFromJid } from '../whatsapp/jid.js';
+import { groupTail, isGroupChat, phoneFromJid } from '../whatsapp/jid.js';
 
 /** Render a Message for the terminal
  **/
 export function formatMessage(m: Message): string {
   const time = m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const sender = m.fromMe ? 'You' : m.pushName || phoneFromJid(m.senderId);
-  const chat = isJidGroup(m.chatId)
-    ? ` [group …${( jidDecode(m.chatId)?.user ?? '').slice(-4)}]`
+  const chat =isGroupChat(m.chatId)
+    ? ` [group …${groupTail(m.chatId)}]`
     : '';
   return `[${time}] ${sender}${chat} > ${describe(m)}`;
 }
