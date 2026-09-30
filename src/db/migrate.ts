@@ -42,7 +42,14 @@ updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 `
       )
     }
-  }
+  },
+{
+  name: '002_chats_alt_jid',
+  up: (db) => {
+    db.exec(`ALTER TABLE chats ADD COLUMN alt_jid TEXT;
+             CREATE INDEX idx_chats_alt ON chats (alt_jid);`);
+  },
+},
 ]
 
 

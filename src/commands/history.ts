@@ -9,11 +9,11 @@ export function registerHistoryCommand(program: Command): void {
   program
     .command('history <name>')
     .description('Show stored message history for a chat')
-    .option('-l, --limit <n>', 'number of messages to show', '50')
+    .option('--ids', 'show message IDs (targets for reply/react)')
     .action((name: string, opts: { limit: string }) => history(name, opts));
 }
 
-async function history(name: string, opts: { limit: string }): Promise<void> {
+async function history(name: string, opts: { limit: string ; ids?: boolean }): Promise<void> {
   const limit = Number(opts.limit) || 50;
 
   const config = loadConfig();
@@ -43,5 +43,5 @@ async function history(name: string, opts: { limit: string }): Promise<void> {
     console.log('(Only messages seen while watching, plus history sync, are stored.)');
     return;
   }
-  for (const m of messages) console.log(formatMessage(m));
+  for (const m of messages) console.log(opts.ids ? `${m.id}  ${formatMessage(m)}` : formatMessage(m));
 }

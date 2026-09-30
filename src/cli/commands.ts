@@ -7,6 +7,7 @@ import { registerLogoutCommand } from "../commands/logout.js";
 import { registerChatsCommand } from "../commands/chats.js";
 import { registerHistoryCommand } from "../commands/history.js";
 import { registerSearchCommand } from "../commands/search.js";
+import { registerSendCommand } from "../commands/send.js";
 
 export function registerCommands(program : Command){
   registerLoginCommand(program)
@@ -17,4 +18,5 @@ export function registerCommands(program : Command){
   registerChatsCommand(program)
   registerHistoryCommand(program)
   registerSearchCommand(program)
+  registerSendCommand(program)
 }

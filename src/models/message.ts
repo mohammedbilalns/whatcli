@@ -24,5 +24,7 @@ export interface Message {
   text?: string;
   replyToId?: string;
   pushName?: string;
+  chatAltId?: string;
+  senderAltId?: string;
 }
 

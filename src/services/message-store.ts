@@ -51,12 +51,13 @@ export class MessageStore {
      update the last_message_at with the newest time 
      * */
     this.stmtChatFromMessage = db.prepare(`
-INSERT INTO chats (jid, type, name, last_message_at)
-VALUES (?, ?, ?, ?)
+INSERT INTO chats (jid, type, name, last_message_at, alt_jid)
+VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (jid) DO UPDATE SET
 name = COALESCE(chats.name, excluded.name),
-last_message_at = COALESCE(MAX(chats.last_message_at, excluded.last_message_at), excluded.last_message_at)
-`)
+last_message_at = COALESCE(MAX(chats.last_message_at, excluded.last_message_at), excluded.last_message_at),
+alt_jid = COALESCE(chats.alt_jid, excluded.alt_jid)
+`);
 
     /** 
      *Create new chat if the jid already exists update the name if if it not there  
@@ -99,6 +100,8 @@ updated_at = datetime('now')
         this.stmtChatFromHistory.run(c.jid, isGroupChat(c.jid) ? 'group' : 'direct', c.name ?? null);
       }
       for (const c of batch.contacts) {
+        if (isGroupChat(c.jid)) continue;
+        if (c.name && /^\+[\d∙]+$/.test(c.name)) c.name = undefined;
         this.stmtUpsertContact.run(c.jid, c.name ?? null);
       }
       for (const msg of batch.messages) {
@@ -150,10 +153,8 @@ ORDER BY last_message_at DESC`)
     const name = !msg.fromMe && !isJidGroup(msg.chatId) ? msg.pushName ?? null : null;
     // Run the prepared statement to upsert chat row 
     this.stmtChatFromMessage.run(
-      msg.chatId,
-      isJidGroup(msg.chatId) ? 'group' : 'direct',
-      name,
-      msg.timestamp.toISOString(),
+      msg.chatId, isGroupChat(msg.chatId) ? 'group' : 'direct',
+      name, msg.timestamp.toISOString(), msg.chatAltId ?? null,
     );
   }
 
@@ -199,5 +200,20 @@ LIMIT ?`)
 
   }
 
+  chatName(jid: string): string | null {
+    const row = this.db.prepare(`
+SELECT c.name AS own, ct.name AS contact, s.name AS sibling, sct.name AS sibling_contact
+FROM chats c
+LEFT JOIN contacts ct  ON ct.jid  = c.jid
+LEFT JOIN chats s      ON s.jid   = c.alt_jid
+LEFT JOIN contacts sct ON sct.jid = c.alt_jid
+WHERE c.jid = ?
+`).get(jid) as { own: string | null; contact: string | null; sibling: string | null; sibling_contact: string | null } | undefined;
+    return row?.own ?? row?.contact ?? row?.sibling ?? row?.sibling_contact ?? null;
+  }
+
+upsertContact(jid: string, name: string): void {
+  this.stmtUpsertContact.run(jid, name);
+}
 
 }
