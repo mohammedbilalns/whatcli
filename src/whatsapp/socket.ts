@@ -4,14 +4,16 @@ import makeWASocket, {
   makeCacheableSignalKeyStore,
   isJidStatusBroadcast,
   isJidNewsletter,
-  CacheStore
+  CacheStore,
+  GroupMetadata
 } from "@whiskeysockets/baileys";
 import { baileysLogger } from "../utils/logger.js";
 import NodeCache from '@cacheable/node-cache';
 
 // Persist these caches outside the create function so they survive socket reconnects.
 const msgRetryCounterCache = new NodeCache() as CacheStore;
-const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
+
+const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false }) as NodeCache<GroupMetadata>;
 
 /**
  * Creates a Baileys WhatsApp Web socket.
@@ -19,6 +21,7 @@ const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
  * The socket manages the connection with WhatsApp,
  * authentication state, encryption, and incoming/outgoing messages.
  */
+
 export function createWASocket( auth : AuthenticationState) {
   const sock = makeWASocket({
     logger: baileysLogger,

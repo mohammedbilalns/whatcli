@@ -4,14 +4,7 @@ import { Command} from "commander";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { registerLoginCommand } from "../commands/login.js";
-import { registerStatusCommand } from "../commands/status.js";
-import { registerDoctorCommand } from "../commands/doctor.js";
-import { registerWatchCommand } from "../commands/watch.js";
-import { registerLogoutCommand } from "../commands/logout.js";
-import { registerChatsCommand } from "../commands/chats.js";
-
-
+import { registerCommands } from "./commands.js";
 
 const pkgPath = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -31,12 +24,7 @@ program
   .version(version)
 
 // Register the application's CLI commands.
-registerLoginCommand(program)
-registerStatusCommand(program)
-registerDoctorCommand(program)
-registerWatchCommand(program)
-registerLogoutCommand(program)
-registerChatsCommand(program)
+registerCommands(program)
 
 
 await program.parseAsync(process.argv)

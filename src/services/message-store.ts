@@ -16,6 +16,17 @@ export interface ChatRow {
   last_message_at: string | null;
 }
 
+export interface MessageRow {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  from_me: 0 | 1;
+  type: string;
+  text: string | null;
+  reply_to_id: string | null;  
+  timestamp: string;
+  push_name: string | null 
+}
 
 export class MessageStore {
 
@@ -162,4 +173,31 @@ ORDER BY last_message_at DESC`)
       push_name: msg.pushName ?? null,
     };
   }
+
+  /** Load a chat's messages, oldest first, most recent N. */
+  listMessages(chatJid: string, limit = 50): Message[] {
+    const rows = this.db
+      .prepare(`SELECT id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name
+FROM messages
+WHERE chat_id = ?
+ORDER BY timestamp DESC
+LIMIT ?`)
+      .all(chatJid, limit) as MessageRow[];
+
+    // newest-first from SQL → chronological for display
+    return rows.reverse().map((row) => ({
+      id: row.id,
+      chatId: row.chat_id,
+      senderId: row.sender_id,
+      fromMe: row.from_me === 1,
+      timestamp: new Date(row.timestamp),
+      type: row.type as Message['type'],
+      text: row.text ?? undefined,
+      replyToId: row.reply_to_id ?? undefined,
+      pushName: row.push_name ?? undefined,
+    }));
+
+  }
+
+
 }
