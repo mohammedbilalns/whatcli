@@ -216,4 +216,11 @@ upsertContact(jid: string, name: string): void {
   this.stmtUpsertContact.run(jid, name);
 }
 
+/** Look up a stored message by ID — the reply/react target. */
+getMessageById(id: string): { id: string; chat_id: string; sender_id: string; from_me: number; text: string | null } | undefined {
+  return this.db
+    .prepare('SELECT id, chat_id, sender_id, from_me, text FROM messages WHERE id = ?')
+    .get(id) as { id: string; chat_id: string; sender_id: string; from_me: number; text: string | null } | undefined;
+}
+
 }

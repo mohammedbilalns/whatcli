@@ -8,6 +8,8 @@ import { registerChatsCommand } from "../commands/chats.js";
 import { registerHistoryCommand } from "../commands/history.js";
 import { registerSearchCommand } from "../commands/search.js";
 import { registerSendCommand } from "../commands/send.js";
+import { registerReactCommand } from "../commands/react.js";
+import { registerReplyCommand } from "../commands/reply.js";
 
 export function registerCommands(program : Command){
   registerLoginCommand(program)
@@ -19,4 +21,6 @@ export function registerCommands(program : Command){
   registerHistoryCommand(program)
   registerSearchCommand(program)
   registerSendCommand(program)
+  registerReactCommand(program)
+  registerReplyCommand(program)
 }

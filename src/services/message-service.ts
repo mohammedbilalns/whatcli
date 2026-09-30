@@ -1,6 +1,6 @@
 import type { Message } from '../models/message.js';
 import type { MessageStore } from './message-store.js';
-import type { WhatsAppClient } from '../whatsapp/client.js';
+import type { ReplyTarget, WhatsAppClient } from '../whatsapp/client.js';
 
 export class MessageService {
   constructor(
@@ -19,4 +19,16 @@ export class MessageService {
     this.store.saveMessage(sent);
     return sent;
   }
+
+async sendReply(chatJid: string, target: ReplyTarget, text: string): Promise<Message> {
+  const sent = await this.client.sendReply(chatJid, target, text);
+  this.store.saveMessage(sent);
+  return sent;
+}
+
+async sendReaction(chatJid: string, target: ReplyTarget, emoji: string): Promise<Message> {
+  const sent = await this.client.sendReaction(chatJid, target, emoji);
+  this.store.saveMessage(sent);
+  return sent;
+}
 }
