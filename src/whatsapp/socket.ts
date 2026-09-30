@@ -22,16 +22,16 @@ const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false });
 export function createWASocket( auth : AuthenticationState) {
   const sock = makeWASocket({
     logger: baileysLogger,
-    
+
     auth: {
       creds: auth.creds,
       keys: makeCacheableSignalKeyStore(auth.keys, baileysLogger),
     },
-    
+
     shouldIgnoreJid: (jid) => isJidStatusBroadcast(jid) || isJidNewsletter(jid),
 
     msgRetryCounterCache,
-    
+
     cachedGroupMetadata: async (jid) => groupCache.get(jid),
 
     markOnlineOnConnect: false ,
@@ -41,21 +41,18 @@ export function createWASocket( auth : AuthenticationState) {
     keepAliveIntervalMs: 30_000,
   });
 
-  // Keep the cache warm when group state changes
 
-  sock.ev.on('groups.update', async ([event]) => {
-    if (event.id) {
-      const metadata = await sock.groupMetadata(event.id);
-      groupCache.set(event.id, metadata);
+  const refreshGroup = async (jid: string | undefined) => {
+    if (!jid) return;
+    try {
+      groupCache.set(jid, await sock.groupMetadata(jid));
+    } catch (err) {
+      baileysLogger.warn({ err, jid }, 'group metadata refresh failed');
     }
-  });
+  };
 
-  sock.ev.on('group-participants.update', async (event) => {
-    if (event.id) {
-      const metadata = await sock.groupMetadata(event.id);
-      groupCache.set(event.id, metadata);
-    }
-  });
+  sock.ev.on('groups.update', ([event]) => void refreshGroup(event?.id));
+  sock.ev.on('group-participants.update', (event) => void refreshGroup(event?.id));
 
   return sock;
 }

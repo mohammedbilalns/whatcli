@@ -6,6 +6,7 @@ import { Database } from "better-sqlite3";
 import { Message } from "../models/message.js";
 import { HistoryBatch } from "../whatsapp/history.js";
 import { isJidGroup } from "@whiskeysockets/baileys";
+import { isGroupChat } from "../whatsapp/jid.js";
 
 export interface ChatRow {
   id: number;
@@ -84,7 +85,7 @@ updated_at = datetime('now')
     this.txIngest = this.db.transaction((batch: HistoryBatch): number => {
       let stored = 0;
       for (const c of batch.chats) {
-        this.stmtChatFromHistory.run(c.jid, isJidGroup(c.jid) ? 'group' : 'direct', c.name ?? null);
+        this.stmtChatFromHistory.run(c.jid, isGroupChat(c.jid) ? 'group' : 'direct', c.name ?? null);
       }
       for (const c of batch.contacts) {
         this.stmtUpsertContact.run(c.jid, c.name ?? null);

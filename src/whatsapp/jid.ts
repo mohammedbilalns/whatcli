@@ -1,13 +1,24 @@
 import { isJidGroup, jidDecode} from "@whiskeysockets/baileys";
 
+
+export const isGroupChat = isJidGroup; 
+
+export function isLid(jid: string): boolean {
+  return jidDecode(jid)?.server === 'lid';
+}
+
+
 export function phoneFromJid(jid: string): string {
-  const user = jidDecode(jid)?.user;
-  return user ? `+${user}` : jid
+  const decoded = jidDecode(jid);
+  const user = decoded?.user ?? '';
+  if (!user) return jid;
+  if (isLid(jid)) return `lid …${user.slice(-4)}`;
+  return `+${user}`;
 }
 
-/** Human label for any chat. */
+export const groupTail = (jid: string): string =>
+  (jidDecode(jid)?.user ?? '').slice(-4);
+
 export function jidLabel(jid: string): string {
-  if (isJidGroup(jid)) return `group …${(jidDecode(jid)?.user ?? '').slice(-4)}`;
-  return phoneFromJid(jid);
+  return isGroupChat(jid) ? `group …${groupTail(jid)}` : phoneFromJid(jid);
 }
-
