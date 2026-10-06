@@ -72,8 +72,17 @@ async function daemon(verbose: boolean): Promise<void> {
       log(`history sync: ${stored} messages, ${batch.chats.length} chats`);
     });
 
+    sock.ev.on('contacts.upsert', (contacts_arr) => {
+      for (const c of contacts_arr) {
+        const name = c.name || c.notify || c.verifiedName;
+        if (c.id && name) contacts.upsertName(c.id, name);
+      }
+    });
     sock.ev.on('contacts.update', (updates) => {
-      for (const u of updates) if (u.id && u.notify) contacts.upsertName(u.id, u.notify);
+      for (const u of updates) {
+        const name = u.name || u.notify || u.verifiedName;
+        if (u.id && name) contacts.upsertName(u.id, name);
+      }
     });
     sock.ev.on('group-participants.update', ({ id, participants, action }) => {
       log(`group ${id.slice(-8)}: ${participants.map((p) => contacts.jidDisplayName(p.id)).join(', ')} — ${action}`);

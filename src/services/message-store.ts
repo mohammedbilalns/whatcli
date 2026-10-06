@@ -119,8 +119,9 @@ updated_at = datetime('now')
       }
       for (const c of batch.contacts) {
         if (isGroupChat(c.jid)) continue;
-        if (c.name && /^\+[\d∙]+$/.test(c.name)) c.name = undefined;
-        this.stmtUpsertContact.run(c.jid, c.name ?? null);
+        let cName = c.name || (c as any).notify || (c as any).verifiedName;
+        if (cName && /^\+[\d∙]+$/.test(cName)) cName = undefined;
+        this.stmtUpsertContact.run(c.jid, cName ?? null);
       }
       for (const msg of batch.messages) {
         this.#chatFromMessage(msg);
@@ -156,8 +157,18 @@ updated_at = datetime('now')
    */
   listChats(): ChatRow[] {
     return this.db
-      .prepare(`SELECT rowid AS id, jid, name, type, last_message_at FROM chats
-ORDER BY last_message_at DESC`) 
+      .prepare(`
+SELECT 
+  c.rowid AS id, 
+  c.jid, 
+  COALESCE(c.name, ct.name, s.name, sct.name) AS name, 
+  c.type, 
+  c.last_message_at 
+FROM chats c
+LEFT JOIN contacts ct  ON ct.jid  = c.jid
+LEFT JOIN chats s      ON s.jid   = c.alt_jid
+LEFT JOIN contacts sct ON sct.jid = c.alt_jid
+ORDER BY c.last_message_at DESC`) 
       .all() as ChatRow[];
   }
 

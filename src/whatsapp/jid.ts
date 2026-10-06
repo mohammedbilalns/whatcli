@@ -11,7 +11,17 @@ export type Resolution =
  *  phone digits, or last-4 of their identifier. */
 export function resolveChat(db: Database, input: string): Resolution {
   const rows = db
-    .prepare(`SELECT jid, name, type, last_message_at FROM chats`)
+    .prepare(`
+SELECT 
+  c.jid, 
+  COALESCE(c.name, ct.name, s.name, sct.name) AS name, 
+  c.type, 
+  c.last_message_at 
+FROM chats c
+LEFT JOIN contacts ct  ON ct.jid  = c.jid
+LEFT JOIN chats s      ON s.jid   = c.alt_jid
+LEFT JOIN contacts sct ON sct.jid = c.alt_jid
+    `)
     .all() as { jid: string; name: string | null; type: string; last_message_at: string | null }[];
   const needle = input.trim().toLowerCase();
   const digits = needle.replace(/\D/g, ''); // phone digits if any
