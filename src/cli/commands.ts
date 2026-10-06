@@ -15,6 +15,8 @@ import { registerSendDocumentCommand } from "../commands/send-document.js";
 import { registerSendImageCommand } from "../commands/send-image.js";
 import { registerGroupCommand } from "../commands/group.js";
 import { registerGroupsCommand } from "../commands/groups.js";
+import { registerContactCommand } from "../commands/contact.js";
+import { registerContactsCommand } from "../commands/contacts.js";
 
 // commands registry 
 const commands = [
@@ -33,7 +35,9 @@ const commands = [
   registerSearchCommand,
   registerSendDocumentCommand,
   registerGroupsCommand,
-  registerGroupCommand
+  registerGroupCommand,
+  registerContactsCommand,
+  registerContactCommand
 ]
 export function registerCommands(program : Command){
 

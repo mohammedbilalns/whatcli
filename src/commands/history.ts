@@ -4,6 +4,7 @@ import { openDatabase } from '../db/database.js';
 import { MessageStore } from '../services/message-store.js';
 import { resolveChat } from '../whatsapp/jid.js';
 import { formatMessage } from '../utils/format.js';
+import { ContactStore } from '../services/contact-store.js';
 
 export function registerHistoryCommand(program: Command): void {
   program
@@ -33,15 +34,19 @@ async function history(name: string, opts: { limit: string ; ids?: boolean }): P
   }
 
   const store = new MessageStore(db);
+  const contacts = new ContactStore(db);
   const messages = store.listMessages(resolved.jid, limit);
   db.close();
 
   console.log(resolved.label);
+  const resolveName = (jid: string) => contacts.displayName(jid)
   console.log('─'.repeat(50));
   if (messages.length === 0) {
     console.log('No stored messages for this chat.');
     console.log('(Only messages seen while watching, plus history sync, are stored.)');
     return;
   }
-  for (const m of messages) console.log(opts.ids ? `${m.id}  ${formatMessage(m)}` : formatMessage(m));
+
+  for (const m of messages)                                        // ④ use it
+    console.log(opts.ids ? `${m.id}  ${formatMessage(m, resolveName)}` : formatMessage(m, resolveName));
 }

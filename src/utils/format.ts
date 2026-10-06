@@ -3,12 +3,14 @@ import { groupTail, isGroupChat, phoneFromJid } from '../whatsapp/jid.js';
 
 /** Render a Message for the terminal
  **/
-export function formatMessage(m: Message): string {
+
+export type NameResolver = (jid: string) => string | null;
+export function formatMessage(m: Message, resolveName?: NameResolver): string {
   const time = m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const sender = m.fromMe ? 'You' : m.pushName || phoneFromJid(m.senderId);
-  const chat =isGroupChat(m.chatId)
-    ? ` [group …${groupTail(m.chatId)}]`
-    : '';
+  const sender = m.fromMe
+    ? 'You'
+    : resolveName?.(m.senderId) || m.pushName || phoneFromJid(m.senderId);   // ← resolver first
+  const chat = isGroupChat(m.chatId) ? ` [group …${groupTail(m.chatId)}]` : '';
   return `[${time}] ${sender}${chat} > ${describe(m)}`;
 }
 

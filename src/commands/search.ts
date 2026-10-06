@@ -3,6 +3,7 @@ import { loadConfig } from '../utils/config.js';
 import { openDatabase } from '../db/database.js';
 import { formatMessage } from '../utils/format.js';
 import { jidLabel } from '../whatsapp/jid.js';
+import { ContactStore } from '../services/contact-store.js';
 
 export function registerSearchCommand(program: Command): void {
   program
@@ -13,6 +14,7 @@ export function registerSearchCommand(program: Command): void {
 
 function handleSearch(text: string): void {
   const db = openDatabase(loadConfig());
+  const contacts = new ContactStore(db)
   const rows = db
     .prepare(`SELECT id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name
                   FROM messages
@@ -33,7 +35,8 @@ function handleSearch(text: string): void {
   );
 
   for (const row of rows) {
-    const chatLabel = chatNames.get(row.chat_id) ?? jidLabel(row.chat_id);
+
+    const chatLabel = contacts.chatName(row.chat_id) ?? jidLabel(row.chat_id); 
     const msg = {
       id: row.id,
       chatId: row.chat_id,
@@ -45,7 +48,7 @@ function handleSearch(text: string): void {
       replyToId: row.reply_to_id ?? undefined,
       pushName: row.push_name ?? undefined,
     };
-    console.log(`${chatLabel} │ ${formatMessage(msg)}`);
-  }
+
+    console.log(`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}`);   }
   db.close();
 }
