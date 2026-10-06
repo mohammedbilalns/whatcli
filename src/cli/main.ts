@@ -15,7 +15,6 @@ const pkgPath = path.join(
 
 const {version } = JSON.parse(readFileSync(pkgPath, 'utf8')) as {version : string}
 
-// Create the Commander program 
 const program = new Command();
 
 program
@@ -23,7 +22,6 @@ program
   .description('Whatsapp in your terminal')
   .version(version)
 
-// Register the application's CLI commands.
 registerCommands(program)
 
 
