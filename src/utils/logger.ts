@@ -15,7 +15,7 @@ export const logger = pino({
 
 export const baileysLogger = pino({
   name: 'baileys',
-  level : process.env.WACLI_BAILEYS_LOG ?? 'warn',
+  level : process.env.WACLI_BAILEYS_LOG ?? 'silent',
   transport: {
     target: "pino-pretty",
     options: {
