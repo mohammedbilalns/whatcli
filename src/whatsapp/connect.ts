@@ -39,9 +39,10 @@ function extractClose(lastDisconnect: {error?: unknown} | undefined): {code: num
 /** Create a socket and wire save creds. */
 export function createSocket(
   auth: AuthenticationState,
-  saveCreds: () => Promise<void> | void 
+  saveCreds: () => Promise<void> | void,
+  getMessage?: (key: import('@whiskeysockets/baileys').proto.IMessageKey) => Promise<import('@whiskeysockets/baileys').proto.IMessage | undefined>
 ): WASocket{
-  const sock = createWASocket(auth)
+  const sock = createWASocket(auth, getMessage)
   sock.ev.on('creds.update', saveCreds)
   return sock 
 }
@@ -82,10 +83,11 @@ export async function connectAndWait(
   auth: AuthenticationState,
   saveCreds: () => Promise<void> | void,
   options: ConnectOptions = {},
+  getMessage?: (key: import('@whiskeysockets/baileys').proto.IMessageKey) => Promise<import('@whiskeysockets/baileys').proto.IMessage | undefined>
 ): Promise<{ sock: WASocket; outcome: ConnectionOutCome }> {
   const MAX_RESTARTS = 5;
   for (let attempt = 0; ; attempt++) {
-    const sock = createSocket(auth, saveCreds);
+    const sock = createSocket(auth, saveCreds, getMessage);
     const outcome = await awaitOpenOrClose(sock, options);
     if (outcome.status !== 'closed') return { sock, outcome };
     if (outcome.code !== DisconnectReason.loggedOut && attempt < MAX_RESTARTS) continue;

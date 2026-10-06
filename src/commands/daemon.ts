@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { useMultiFileAuthState } from '@whiskeysockets/baileys';
+import { useSqliteAuthState } from '../whatsapp/auth.js';
 import { loadConfig } from '../utils/config.js';
 import { WhatsAppManager, type ManagerState } from '../whatsapp/manager.js';
 import { registerMessageListener } from '../whatsapp/messages.js';
@@ -27,7 +27,8 @@ export function registerDaemonCommand(program: Command): void {
 
 async function daemon(verbose: boolean): Promise<void> {
   const config = loadConfig();
-  const { state, saveCreds } = await useMultiFileAuthState(config.authDir);
+  const db = openDatabase(config);
+  const { state, saveCreds } = await useSqliteAuthState(db);
   if (!(state.creds.registered || !!state.creds.me?.id)) {
     console.log('Not logged in — run "wacli login" first.');
     process.exit(1);
@@ -36,7 +37,6 @@ async function daemon(verbose: boolean): Promise<void> {
   const stamp = () => new Date().toLocaleTimeString();
   const log = (msg: string) => console.log(`[${stamp()}] ${msg}`);
 
-  const db = openDatabase(config);
   const store = new MessageStore(db);
   const contacts = new ContactStore(db);
   const ruleStore = new RuleStore(db);
@@ -121,7 +121,14 @@ async function daemon(verbose: boolean): Promise<void> {
   process.on('SIGINT', () => void graceful());
 
   await ipc.start();       
-  await manager.start(state, saveCreds, config.authDir);
+  await manager.start(
+    state,
+    saveCreds,
+    () => {
+      db.prepare('DELETE FROM auth_state').run();
+    },
+    async (key) => store.getRawMessage(key.id!)
+  );
   process.exit(0);
 }
 

@@ -97,6 +97,17 @@ UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS 
     `);
   },
 },
+{
+  name: '006_auth_state',
+  up: (db) => {
+    db.exec(`
+      CREATE TABLE auth_state (
+        name TEXT PRIMARY KEY,
+        data TEXT NOT NULL
+      );
+    `);
+  },
+},
 ]
 
 

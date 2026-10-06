@@ -1,7 +1,9 @@
 import { Command } from "commander";
-import { rmSync } from 'node:fs';
+
 import { loadConfig } from "../utils/config.js";
-import { DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import { openDatabase } from "../db/database.js";
+import { useSqliteAuthState } from "../whatsapp/auth.js";
+import { DisconnectReason } from "@whiskeysockets/baileys";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
 import { IpcClient } from "../ipc/client.js";
@@ -18,7 +20,8 @@ export function registerStatusCommand(program: Command ): void {
  */
 async function status(): Promise<void>{
   const config = loadConfig()
-  const {state, saveCreds}  = await useMultiFileAuthState(config.authDir)
+  const db = openDatabase(config);
+  const {state, saveCreds}  = await useSqliteAuthState(db)
 
 
   console.log('Whatsapp')
@@ -88,7 +91,8 @@ if (await ipc.alive()) {
 
   if (outcome.code === DisconnectReason.loggedOut) {
     console.log('Status: Logged out (session invalidated from the phone)');
-    rmSync(config.authDir, { recursive: true, force: true });
+    db.prepare('DELETE FROM auth_state').run();
+    db.close();
     console.log('Local credentials deleted.');
     console.log('Run "wacli login" to connect again.');
   } else {

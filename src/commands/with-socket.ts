@@ -46,7 +46,7 @@ export async function withSocket(
     }
   }
 
-  const session = await loadSession(config);
+  const session = await loadSession(db);
   if (!session.hasSession) {
     console.log('Not logged in — run "wacli login" first.');
     db.close();

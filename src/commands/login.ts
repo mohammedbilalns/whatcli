@@ -1,10 +1,12 @@
 import { Command } from "commander";
 import { loadConfig } from "../utils/config.js";
 import qrcode from "qrcode-terminal"
-import { DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import { DisconnectReason } from "@whiskeysockets/baileys";
+import { openDatabase } from "../db/database.js";
+import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
-import { rmSync } from "node:fs";
+
 
 export function registerLoginCommand(program : Command): void {
 
@@ -32,7 +34,8 @@ async function login(): Promise<void> {
    * If this is the first login, the directory may not
    * contain an authenticated session yet.
    */
-  const {state , saveCreds} = await useMultiFileAuthState(config.authDir)
+  const db = openDatabase(config);
+  const {state , saveCreds} = await useSqliteAuthState(db)
 
   console.log('Connecting to whatsapp...')
 
@@ -101,7 +104,8 @@ async function login(): Promise<void> {
    */
   if(outcome.code === DisconnectReason.loggedOut){
     console.log('\nSaved session is invalid — wiping it and starting a fresh login.');
-    rmSync(config.authDir, { recursive: true, force: true });
+    db.prepare('DELETE FROM auth_state').run();
+    db.close();
     return login(); // empty auth dir now → fresh state → QR code
   }else {
     console.log(`\n Connection closed (code ${outcome.code}): ${outcome.error?.message ?? 'unknow'}`)

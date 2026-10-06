@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { useMultiFileAuthState } from '@whiskeysockets/baileys';
+import { useSqliteAuthState } from '../whatsapp/auth.js';
 import { loadConfig } from '../utils/config.js';
 import { WhatsAppManager } from '../whatsapp/manager.js';
 import { registerMessageListener } from '../whatsapp/messages.js';
@@ -25,7 +25,8 @@ export function registerWatchCommand(program: Command): void {
 
 async function watch(): Promise<void> {
   const config = loadConfig();
-  const { state, saveCreds } = await useMultiFileAuthState(config.authDir);
+  const db = openDatabase(config);
+  const { state, saveCreds } = await useSqliteAuthState(db);
 
   const hasSession = state.creds.registered || !!state.creds.me?.id;
   if (!hasSession) {
@@ -52,7 +53,7 @@ async function watch(): Promise<void> {
     },
   });
 
-  const db = openDatabase(config)
+
   const store = new MessageStore(db)
   const contacts = new ContactStore(db);     
   const ruleStore = new RuleStore(db)
@@ -124,6 +125,13 @@ sock.ev.on('groups.update', (updates) => {
     })();
   });
 
-  await manager.start(state, saveCreds, config.authDir);
+  await manager.start(
+    state,
+    saveCreds,
+    () => {
+      db.prepare('DELETE FROM auth_state').run();
+    },
+    async (key) => store.getRawMessage(key.id!)
+  );
   process.exit(0);
 }
