@@ -8,19 +8,20 @@ A pure Command Line Interface (CLI) for interacting with the WhatsApp backend.
 
 ### Currently Implemented
 - [x] **Authentication:** Login via QR code and securely manage sessions (`login`, `logout`)
-- [x] **Session Management:** Check connection status (`status`)
+- [x] **Session Management:** Check connection status (`status`, `doctor`)
 - [x] **Messaging:** Send text messages (`send`)
 - [x] **Media Support:** Send images and documents (`send-image`, `send-document`, `media`)
 - [x] **Chat Management:** List recent chats and fetch conversations (`chats`, `history`)
+- [x] **Group Support:** List and inspect WhatsApp groups (`groups`, `group`)
+- [x] **Contact Management:** Search, alias, and manage WhatsApp contacts (`contacts`, `contact`)
 - [x] **Interactivity:** Reply to and react to specific messages (`reply`, `react`)
-- [x] **Search:** Search through messages (`search`)
+- [x] **Search:** Search through locally stored messages (`search`)
+- [x] **Automations:** Trigger auto-replies or reactions based on regex or keywords (`wacli rule`)
 - [x] **Live Listening:** Watch incoming messages in real-time (`watch`)
 
 ### Planned / Future Features
-- [ ] **Group Support:** Create, manage, and interact with WhatsApp groups (add/remove participants, modify group info).
-- [ ] **Automations:** Auto-responders, scriptable triggers, and basic bot capabilities directly from the CLI.
+- [ ] **Group Administration:** Create groups, add/remove participants, modify group info.
 - [ ] **Scheduled Messages:** Queue messages to be sent at a specific future time.
-- [ ] **Contact Management:** Sync, list, and manage WhatsApp contacts.
 - [ ] **Bulk Actions:** Send broadcast messages to multiple contacts.
 - [ ] **Exporting:** Export chat history to structured formats like JSON or CSV.
 
