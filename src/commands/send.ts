@@ -1,13 +1,13 @@
+import type { Boom } from "@hapi/boom";
 import type { Command } from "commander";
-import { Boom } from "@hapi/boom";
-import { loadConfig } from "../utils/config.js";
 import { openDatabase } from "../db/database.js";
-import { MessageStore } from "../services/message-store.js";
 import { MessageService } from "../services/message-service.js";
+import { MessageStore } from "../services/message-store.js";
+import { loadConfig } from "../utils/config.js";
 import { WhatsAppClient } from "../whatsapp/client.js";
+import { connectAndWait } from "../whatsapp/connect.js";
 import { resolveChat } from "../whatsapp/jid.js";
 import { loadSession } from "../whatsapp/session.js";
-import { connectAndWait } from "../whatsapp/connect.js";
 
 export function registerSendCommand(program: Command): void {
 	program

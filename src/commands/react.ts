@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { withSocket, resolveOrThrow, UserError } from "./with-socket.js";
+import { resolveOrThrow, UserError, withSocket } from "./with-socket.js";
 
 export function registerReactCommand(program: Command): void {
 	program

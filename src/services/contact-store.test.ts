@@ -1,6 +1,6 @@
+import Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
 import { migrate } from "../db/migrate";
-import Database from "better-sqlite3";
 import { ContactStore } from "./contact-store";
 
 describe("ContactStore", () => {

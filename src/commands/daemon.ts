@@ -1,20 +1,20 @@
 import type { Command } from "commander";
-import { useSqliteAuthState } from "../whatsapp/auth.js";
-import { loadConfig } from "../utils/config.js";
-import { WhatsAppManager, type ManagerState } from "../whatsapp/manager.js";
-import { registerMessageListener } from "../whatsapp/messages.js";
-import { registerHistorySync } from "../whatsapp/history.js";
-import { formatMessage } from "../utils/format.js";
 import { openDatabase } from "../db/database.js";
-import { MessageStore } from "../services/message-store.js";
-import { ContactStore } from "../services/contact-store.js";
-import { RuleStore } from "../services/rule-store.js";
-import { RuleEngine } from "../services/rule-engine.js";
-import { Automation } from "../services/automation.js";
-import { MessageService } from "../services/message-service.js";
-import { WhatsAppClient } from "../whatsapp/client.js";
 import { IpcServer } from "../ipc/server.js";
+import { Automation } from "../services/automation.js";
+import { ContactStore } from "../services/contact-store.js";
+import { MessageService } from "../services/message-service.js";
+import { MessageStore } from "../services/message-store.js";
+import { RuleEngine } from "../services/rule-engine.js";
+import { RuleStore } from "../services/rule-store.js";
+import { loadConfig } from "../utils/config.js";
+import { formatMessage } from "../utils/format.js";
 import { logger } from "../utils/logger.js";
+import { useSqliteAuthState } from "../whatsapp/auth.js";
+import { WhatsAppClient } from "../whatsapp/client.js";
+import { registerHistorySync } from "../whatsapp/history.js";
+import { type ManagerState, WhatsAppManager } from "../whatsapp/manager.js";
+import { registerMessageListener } from "../whatsapp/messages.js";
 
 export function registerDaemonCommand(program: Command): void {
 	program
@@ -61,7 +61,7 @@ async function daemon(verbose: boolean): Promise<void> {
 				(jid) => contacts.displayName(jid) !== null,
 			),
 			ruleStore,
-			service!,
+			service as import("../services/message-service.js").MessageService,
 			log,
 		);
 
@@ -76,7 +76,7 @@ async function daemon(verbose: boolean): Promise<void> {
 			if (live) {
 				if (verbose)
 					console.log(
-						formatMessage(message, (j) => contacts.displayName(j)) + "\n",
+						`${formatMessage(message, (j) => contacts.displayName(j))}\n`,
 					);
 				void automation.handle(message);
 			}
@@ -123,31 +123,33 @@ async function daemon(verbose: boolean): Promise<void> {
 				case "ping":
 					return { state: "up", ingested };
 				case "send.text":
-					return service!.sendText(params.jid, params.text);
+					return service?.sendText(params.jid, params.text);
 				case "send.reply":
-					return service!.sendReply(params.jid, params.target, params.text);
+					return service?.sendReply(params.jid, params.target, params.text);
 				case "send.reaction":
-					return service!.sendReaction(params.jid, params.target, params.emoji);
+					return service?.sendReaction(params.jid, params.target, params.emoji);
 				case "send.image":
-					return service!.sendImage(
+					return service?.sendImage(
 						params.jid,
 						params.filePath,
 						params.caption ?? undefined,
 					);
 				case "send.document":
-					return service!.sendDocument(params.jid, params.filePath);
+					return service?.sendDocument(params.jid, params.filePath);
 				case "media.download": {
 					const raw = {
 						key: params.key,
 						message: params.message,
 					} as import("@whiskeysockets/baileys").WAMessage;
-					const { buffer, mediaJson } = await service!.downloadMediaVia(raw); // see note below
+					const { buffer, mediaJson } = await (
+						service as import("../services/message-service.js").MessageService
+					).downloadMediaVia(raw); // see note below
 					return { b64: buffer.toString("base64"), mediaJson };
 				}
 				case "group.info":
-					return service!.groupInfo(params.jid);
+					return service?.groupInfo(params.jid);
 				case "lookup":
-					return service!.lookupPhone(params.phone);
+					return service?.lookupPhone(params.phone);
 				case "stop":
 					log("stop requested via ipc");
 					void graceful();
@@ -176,7 +178,7 @@ async function daemon(verbose: boolean): Promise<void> {
 		() => {
 			db.prepare("DELETE FROM auth_state").run();
 		},
-		async (key) => store.getRawMessage(key.id!),
+		async (key) => store.getRawMessage(key.id as string),
 	);
 	process.exit(0);
 }

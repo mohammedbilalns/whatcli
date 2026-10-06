@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
-import { Config } from "../utils/config.js";
-import Database from "better-sqlite3";
 import path from "node:path";
+import Database from "better-sqlite3";
+import type { Config } from "../utils/config.js";
 import { migrate } from "./migrate.js";
 
 /**

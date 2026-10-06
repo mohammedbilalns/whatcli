@@ -1,9 +1,9 @@
 import type { Command } from "commander";
-import { loadConfig } from "../utils/config.js";
 import { openDatabase } from "../db/database.js";
+import type { ActionType, TriggerType } from "../models/rules.js";
 import { RuleStore } from "../services/rule-store.js";
+import { loadConfig } from "../utils/config.js";
 import { resolveChat } from "../whatsapp/jid.js";
-import { TriggerType, ActionType } from "../models/rules.js";
 
 export function registerRuleCommand(program: Command): void {
 	const rule = program.command("rule").description("Manage automation rules");

@@ -6,6 +6,7 @@ export function printTable(
 	rows: string[][],
 	opts?: { border?: boolean; padding?: boolean },
 ) {
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: ansi escapes
 	const stripAnsi = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, "");
 	if (process.stdout.isTTY) {
 		const widths = headers.map((h, i) =>

@@ -1,14 +1,13 @@
-import type { WAMessage, WASocket } from "@whiskeysockets/baileys";
-import type { Message } from "../models/message.js";
-import { GroupInfo } from "../models/groups.js";
-import { parseMessage } from "./parser.js";
-import { isGroupChat } from "./jid.js";
-import { downloadMediaMessage } from "@whiskeysockets/baileys";
-import { inferMime } from "../utils/files.js";
 import path from "node:path";
-
+import type { WAMessage, WASocket } from "@whiskeysockets/baileys";
+import { downloadMediaMessage } from "@whiskeysockets/baileys";
+import type { GroupInfo } from "../models/groups.js";
+import type { Message } from "../models/message.js";
+import { inferMime } from "../utils/files.js";
 import { baileysLogger } from "../utils/logger.js";
-import { Sender } from "./sender.js";
+import { isGroupChat } from "./jid.js";
+import { parseMessage } from "./parser.js";
+import type { Sender } from "./sender.js";
 
 export interface ReplyTarget {
 	id: string;
@@ -155,7 +154,7 @@ export class WhatsAppClient implements Sender {
 		return (res || []).map((r) => ({
 			jid: r.jid,
 			exists: r.exists,
-			lid: "lid" in r ? (r as any).lid : undefined,
+			lid: "lid" in r ? (r as { lid?: string }).lid : undefined,
 		}));
 	}
 }

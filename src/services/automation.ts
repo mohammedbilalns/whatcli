@@ -1,9 +1,9 @@
 import type { Message } from "../models/message.js";
+import type { MessageService } from "./message-service.js";
 import type { RuleEngine } from "./rule-engine.js";
 import type { RuleStore } from "./rule-store.js";
-import type { MessageService } from "./message-service.js";
 
-const COOLDOWN_MS = 30_000;
+const _COOLDOWN_MS = 30_000;
 
 export class Automation {
 	private readonly lastFired = new Map<number, number>();

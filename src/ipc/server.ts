@@ -1,5 +1,5 @@
+import { chmodSync, existsSync, unlinkSync } from "node:fs";
 import net from "node:net";
-import { existsSync, unlinkSync, chmodSync } from "node:fs";
 import type { IpcRequest } from "./protocol.js";
 
 export type IpcHandler = (
@@ -58,15 +58,15 @@ export class IpcServer {
 
 			void this.handler(req.method, req.params ?? {})
 				.then((result) =>
-					conn.write(JSON.stringify({ id: req.id, ok: true, result }) + "\n"),
+					conn.write(`${JSON.stringify({ id: req.id, ok: true, result })}\n`),
 				)
 				.catch((err) =>
 					conn.write(
-						JSON.stringify({
+						`${JSON.stringify({
 							id: req.id,
 							ok: false,
 							error: String(err?.message ?? err),
-						}) + "\n",
+						})}\n`,
 					),
 				);
 		});

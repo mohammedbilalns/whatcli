@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import type { Command } from "commander";
-import { withSocket, resolveOrThrow } from "./with-socket.js";
+import { resolveOrThrow, withSocket } from "./with-socket.js";
 
 export function registerSendImageCommand(program: Command): void {
 	program

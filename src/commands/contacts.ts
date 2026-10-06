@@ -1,8 +1,8 @@
-import { Command } from "commander";
+import type { Command } from "commander";
 import { openDatabase } from "../db/database.js";
 import { ContactStore } from "../services/contact-store.js";
 import { loadConfig } from "../utils/config.js";
-import { printTable, printInfo } from "../utils/output.js";
+import { printInfo, printTable } from "../utils/output.js";
 
 export function registerContactsCommand(program: Command): void {
 	program

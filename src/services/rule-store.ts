@@ -1,5 +1,5 @@
 import type { Database } from "better-sqlite3";
-import { Rule, RuleInput } from "../models/rules.js";
+import type { Rule, RuleInput } from "../models/rules.js";
 
 export class RuleStore {
 	constructor(private readonly db: Database) {}
@@ -66,7 +66,7 @@ export class RuleStore {
 			enabled: r.enabled === 1,
 			hitCount: r.hit_count,
 			lastFired: r.last_fired
-				? new Date(r.last_fired.replace(" ", "T") + "Z")
+				? new Date(`${r.last_fired.replace(" ", "T")}Z`)
 				: null,
 		};
 	}

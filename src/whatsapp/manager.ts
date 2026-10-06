@@ -3,14 +3,14 @@
  */
 import type { AuthenticationState, WASocket } from "@whiskeysockets/baileys";
 import {
-	createSocket,
 	awaitOpenOrClose,
-	nextClose,
 	type ConnectOptions,
+	createSocket,
+	nextClose,
 } from "./connect.js";
 import {
-	decideReconnect,
 	DEFAULT_POLICY,
+	decideReconnect,
 	type ReconnectPolicy,
 } from "./reconnect.js";
 

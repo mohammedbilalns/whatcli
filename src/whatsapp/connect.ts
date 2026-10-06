@@ -1,9 +1,9 @@
+import type { Boom } from "@hapi/boom";
 import {
-	AuthenticationState,
+	type AuthenticationState,
 	DisconnectReason,
-	WASocket,
+	type WASocket,
 } from "@whiskeysockets/baileys";
-import { Boom } from "@hapi/boom";
 import { createWASocket } from "./socket.js";
 
 /**

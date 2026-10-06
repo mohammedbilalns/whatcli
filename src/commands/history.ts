@@ -1,11 +1,11 @@
 import type { Command } from "commander";
-import { loadConfig } from "../utils/config.js";
 import { openDatabase } from "../db/database.js";
-import { MessageStore } from "../services/message-store.js";
-import { resolveChat } from "../whatsapp/jid.js";
-import { formatMessage } from "../utils/format.js";
 import { ContactStore } from "../services/contact-store.js";
-import { printInfo, printData, printError } from "../utils/output.js";
+import { MessageStore } from "../services/message-store.js";
+import { loadConfig } from "../utils/config.js";
+import { formatMessage } from "../utils/format.js";
+import { printData, printError, printInfo } from "../utils/output.js";
+import { resolveChat } from "../whatsapp/jid.js";
 
 export function registerHistoryCommand(program: Command): void {
 	program

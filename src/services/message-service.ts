@@ -1,11 +1,11 @@
-import type { Message } from "../models/message.js";
-import type { MessageStore } from "./message-store.js";
-import type { ReplyTarget } from "../whatsapp/client.js";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
-import { reconstructMediaMessage, describeMedia } from "../whatsapp/media.js";
-import { mediaSubdir, ensureDir, extFromMime } from "../utils/files.js";
-import { Sender } from "../whatsapp/sender.js";
+import type { Message } from "../models/message.js";
+import { ensureDir, extFromMime, mediaSubdir } from "../utils/files.js";
+import type { ReplyTarget } from "../whatsapp/client.js";
+import { describeMedia, reconstructMediaMessage } from "../whatsapp/media.js";
+import type { Sender } from "../whatsapp/sender.js";
+import type { MessageStore } from "./message-store.js";
 
 export class MessageService {
 	constructor(
@@ -92,7 +92,7 @@ export class MessageService {
 		return this.client.lookupPhone(phone);
 	}
 
-	async downloadMediaVia(raw: any) {
+	async downloadMediaVia(raw: import("@whiskeysockets/baileys").WAMessage) {
 		return this.client.downloadMedia(raw);
 	}
 }

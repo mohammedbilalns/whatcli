@@ -1,5 +1,5 @@
 import { isJidGroup, jidDecode } from "@whiskeysockets/baileys";
-import { Database } from "better-sqlite3";
+import type { Database } from "better-sqlite3";
 
 export type Resolution =
 	| { ok: true; jid: string; label: string }
@@ -36,7 +36,7 @@ LEFT JOIN contacts sct ON sct.jid = c.alt_jid
 	const digits = needle.replace(/\D/g, ""); // phone digits if any
 
 	const matches = rows.filter((r) => {
-		if (r.name && r.name.toLowerCase().includes(needle)) return true;
+		if (r.name?.toLowerCase().includes(needle)) return true;
 		const user = r.jid.split("@")[0]?.split(":")[0] ?? "";
 		if (digits.length >= 4 && digits === user) return true; // exact phone JID
 		if (digits.length >= 4 && digits.endsWith(user)) return true; // phone with country code
@@ -65,7 +65,7 @@ LEFT JOIN contacts sct ON sct.jid = c.alt_jid
 			candidates: sorted.map(toCandidate),
 		};
 	}
-	const pick = toCandidate(chosen[0]!);
+	const pick = toCandidate(chosen[0] as { jid: string; name: string | null });
 	return { ok: true, jid: pick.jid, label: pick.label };
 }
 

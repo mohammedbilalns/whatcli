@@ -1,11 +1,10 @@
 import {
-	AuthenticationCreds,
-	AuthenticationState,
+	type AuthenticationCreds,
+	type AuthenticationState,
 	BufferJSON,
 	initAuthCreds,
-	SignalDataTypeMap,
 } from "@whiskeysockets/baileys";
-import { Database } from "better-sqlite3";
+import type { Database } from "better-sqlite3";
 
 export async function useSqliteAuthState(
 	db: Database,
@@ -23,24 +22,24 @@ export async function useSqliteAuthState(
 			if (row) {
 				return JSON.parse(row.data, BufferJSON.reviver);
 			}
-		} catch (error) {
+		} catch (_error) {
 			// return null below
 		}
 		return null;
 	};
 
-	const writeData = (name: string, data: any) => {
+	const writeData = (name: string, data: unknown) => {
 		insertStmt.run(name, JSON.stringify(data, BufferJSON.replacer));
 	};
 
-	let creds: AuthenticationCreds = readData("creds") || initAuthCreds();
+	const creds: AuthenticationCreds = readData("creds") || initAuthCreds();
 
 	return {
 		state: {
 			creds,
 			keys: {
 				get: async (type, ids) => {
-					const data: { [id: string]: any } = {};
+					const data: { [id: string]: unknown } = {};
 					for (const id of ids) {
 						const value = readData(`${type}-${id}`);
 						if (value !== null) {
@@ -52,7 +51,9 @@ export async function useSqliteAuthState(
 				set: async (data) => {
 					const applySet = db.transaction((txData) => {
 						for (const category of Object.keys(txData)) {
-							const keys = (txData as any)[category];
+							const keys = (txData as Record<string, Record<string, unknown>>)[
+								category
+							];
 							for (const id of Object.keys(keys)) {
 								const value = keys[id];
 								const name = `${category}-${id}`;

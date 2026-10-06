@@ -1,6 +1,6 @@
 import type { Command } from "commander";
-import { withSocket, resolveOrThrow, UserError } from "./with-socket.js";
 import { isGroupChat, jidLabel } from "../whatsapp/jid.js";
+import { resolveOrThrow, UserError, withSocket } from "./with-socket.js";
 
 export function registerGroupCommand(program: Command): void {
 	const group = program.command("group").description("Group operations");
@@ -41,7 +41,7 @@ async function groupInfo(name: string): Promise<void> {
 		if (info.description) {
 			const desc =
 				info.description.length > 120
-					? info.description.slice(0, 117) + "…"
+					? `${info.description.slice(0, 117)}…`
 					: info.description;
 			console.log(`\n${desc}`);
 		}

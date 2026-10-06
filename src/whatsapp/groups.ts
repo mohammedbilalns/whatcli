@@ -1,5 +1,5 @@
-import type { WASocket, GroupMetadata } from "@whiskeysockets/baileys";
-import { GroupInfo } from "../models/groups.js";
+import type { GroupMetadata, WASocket } from "@whiskeysockets/baileys";
+import type { GroupInfo } from "../models/groups.js";
 
 /** Fetch live group metadata and map it to model. Names are filled by
  *  the caller . */

@@ -1,6 +1,6 @@
 import type { AuthenticationState } from "@whiskeysockets/baileys";
-import { useSqliteAuthState } from "./auth.js";
 import type { Database } from "better-sqlite3";
+import { useSqliteAuthState } from "./auth.js";
 
 export interface Session {
 	state: AuthenticationState;

@@ -1,8 +1,8 @@
 import type { Command } from "commander";
-import { loadConfig } from "../utils/config.js";
 import { openDatabase } from "../db/database.js";
 import { RuleStore } from "../services/rule-store.js";
-import { printTable, printInfo } from "../utils/output.js";
+import { loadConfig } from "../utils/config.js";
+import { printInfo, printTable } from "../utils/output.js";
 
 export function registerRulesCommand(program: Command): void {
 	program

@@ -112,7 +112,7 @@ UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS 
 		name: "007_rules_action",
 		up: (db) => {
 			// For users who already ran 005_rules when it had a syntax error that hid the 'action' column inside a comment
-			const info = db.pragma("table_info(rules)") as any[];
+			const info = db.pragma("table_info(rules)") as Record<string, unknown>[];
 			if (!info.find((c) => c.name === "action")) {
 				db.exec(
 					`ALTER TABLE rules ADD COLUMN action TEXT NOT NULL DEFAULT 'reply'`,

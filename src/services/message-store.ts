@@ -2,10 +2,10 @@
  * Persistence layer that saves whatsapp messagees, chats and contact to the sqlite db and provide read access for the cli
  */
 
-import { Database } from "better-sqlite3";
-import { Message } from "../models/message.js";
-import { HistoryBatch } from "../whatsapp/history.js";
 import { isJidGroup } from "@whiskeysockets/baileys";
+import type { Database } from "better-sqlite3";
+import type { Message } from "../models/message.js";
+import type { HistoryBatch } from "../whatsapp/history.js";
 import { isGroupChat } from "../whatsapp/jid.js";
 import { ContactStore } from "./contact-store.js";
 
@@ -121,7 +121,10 @@ updated_at = datetime('now')
 			}
 			for (const c of batch.contacts) {
 				if (isGroupChat(c.jid)) continue;
-				let cName = c.name || (c as any).notify || (c as any).verifiedName;
+				let cName =
+					c.name ||
+					((c as Record<string, unknown>).notify as string) ||
+					((c as Record<string, unknown>).verifiedName as string);
 				if (cName && /^\+[\d∙]+$/.test(cName)) cName = undefined;
 				this.stmtUpsertContact.run(c.jid, cName ?? null);
 			}
@@ -260,9 +263,7 @@ WHERE c.jid = ?
 	}
 
 	/** Look up a stored message by ID — the reply/react target. */
-	getMessageById(
-		id: string,
-	):
+	getMessageById(id: string):
 		| {
 				id: string;
 				chat_id: string;
@@ -294,7 +295,9 @@ WHERE c.jid = ?
 			.get(id) as MediaRow | undefined;
 	}
 
-	getRawMessage(id: string): any | undefined {
+	getRawMessage(
+		id: string,
+	): import("@whiskeysockets/baileys").WAMessage | undefined {
 		const row = this.db
 			.prepare("SELECT type, text, media_json FROM messages WHERE id = ?")
 			.get(id) as

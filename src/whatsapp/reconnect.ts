@@ -28,7 +28,7 @@ export function decideReconnect(
 	);
 
 	// Session is dead server-side.
-	if (code == DisconnectReason.loggedOut) {
+	if (code === DisconnectReason.loggedOut) {
 		return {
 			action: "wipe-and-stop",
 			reason: "logged out (invalidated from the phone)",
@@ -38,7 +38,7 @@ export function decideReconnect(
 	// Local auth state is unusable.
 	if (
 		code === DisconnectReason.badSession ||
-		code == DisconnectReason.multideviceMismatch
+		code === DisconnectReason.multideviceMismatch
 	) {
 		return { action: "wipe-and-stop", reason: "saved session " };
 	}

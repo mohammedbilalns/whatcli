@@ -23,7 +23,7 @@ export class IpcClient {
 	): Promise<unknown> {
 		return new Promise((resolve, reject) => {
 			const s = net.connect(this.path, () => {
-				s.write(JSON.stringify({ id: 1, method, params }) + "\n");
+				s.write(`${JSON.stringify({ id: 1, method, params })}\n`);
 			});
 			let buf = "";
 			s.on("data", (chunk) => {

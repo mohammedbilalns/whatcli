@@ -1,12 +1,11 @@
-import { Command } from "commander";
-
-import { loadConfig } from "../utils/config.js";
-import { openDatabase } from "../db/database.js";
-import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { DisconnectReason } from "@whiskeysockets/baileys";
+import type { Command } from "commander";
+import { openDatabase } from "../db/database.js";
+import { IpcClient } from "../ipc/client.js";
+import { loadConfig } from "../utils/config.js";
+import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
-import { IpcClient } from "../ipc/client.js";
 
 export function registerStatusCommand(program: Command): void {
 	program

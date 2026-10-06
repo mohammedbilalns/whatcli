@@ -1,5 +1,5 @@
 import type { Message } from "../models/message.js";
-import { Rule } from "../models/rules.js";
+import type { Rule } from "../models/rules.js";
 import { isGroupChat } from "../whatsapp/jid.js";
 
 export interface RuleHit {
@@ -41,7 +41,7 @@ export class RuleEngine {
 		if (rule.chat === "group") return isGroup;
 		if (rule.chat === "direct") return !isGroup;
 		if (rule.chat === "unknown")
-			return !isGroup && (!this.isContactSaved || !this.isContactSaved(chatId));
+			return !isGroup && !this.isContactSaved?.(chatId);
 		return rule.chat === chatId; // explicit JID — group or direct
 	}
 

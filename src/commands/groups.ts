@@ -1,10 +1,10 @@
 import type { Command } from "commander";
-import { loadConfig } from "../utils/config.js";
 import { openDatabase } from "../db/database.js";
 import { MessageStore } from "../services/message-store.js";
-import { jidLabel } from "../whatsapp/jid.js";
+import { loadConfig } from "../utils/config.js";
+import { printInfo, printTable } from "../utils/output.js";
 import { timeAgo } from "../utils/time.js";
-import { printTable, printInfo } from "../utils/output.js";
+import { jidLabel } from "../whatsapp/jid.js";
 
 export function registerGroupsCommand(program: Command): void {
 	program

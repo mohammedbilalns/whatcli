@@ -1,15 +1,14 @@
+import NodeCache from "@cacheable/node-cache";
 import makeWASocket, {
-	AuthenticationState,
-	Browsers,
-	makeCacheableSignalKeyStore,
-	isJidStatusBroadcast,
+	type AuthenticationState,
+	type CacheStore,
+	type GroupMetadata,
 	isJidNewsletter,
-	CacheStore,
-	GroupMetadata,
-	proto,
+	isJidStatusBroadcast,
+	makeCacheableSignalKeyStore,
+	type proto,
 } from "@whiskeysockets/baileys";
 import { baileysLogger } from "../utils/logger.js";
-import NodeCache from "@cacheable/node-cache";
 
 // Persist these caches outside the create function so they survive socket reconnects.
 const msgRetryCounterCache = new NodeCache() as CacheStore;

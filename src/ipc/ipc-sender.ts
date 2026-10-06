@@ -1,7 +1,7 @@
-import { Sender, ReplyTarget } from "../whatsapp/sender.js";
-import type { Message } from "../models/message.js";
-import { GroupInfo } from "../models/groups.js";
 import type { WAMessage } from "@whiskeysockets/baileys";
+import type { GroupInfo } from "../models/groups.js";
+import type { Message } from "../models/message.js";
+import type { ReplyTarget, Sender } from "../whatsapp/sender.js";
 import type { IpcClient } from "./client.js";
 
 export class IpcSender implements Sender {

@@ -1,9 +1,9 @@
 import type { Command } from "commander";
-import { loadConfig } from "../utils/config.js";
 import { openDatabase } from "../db/database.js";
+import { ContactStore } from "../services/contact-store.js";
+import { loadConfig } from "../utils/config.js";
 import { formatMessage } from "../utils/format.js";
 import { jidLabel } from "../whatsapp/jid.js";
-import { ContactStore } from "../services/contact-store.js";
 
 export function registerSearchCommand(program: Command): void {
 	program
@@ -29,7 +29,7 @@ function handleSearch(text: string): void {
 		return;
 	}
 
-	const chatNames = new Map(
+	const _chatNames = new Map(
 		(
 			db.prepare("SELECT jid, name FROM chats").all() as {
 				jid: string;

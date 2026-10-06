@@ -1,13 +1,13 @@
-import { Command } from "commander";
-import { loadConfig } from "../utils/config.js";
-import qrcode from "qrcode-terminal";
 import { DisconnectReason } from "@whiskeysockets/baileys";
+import type { Command } from "commander";
+import ora from "ora";
+import qrcode from "qrcode-terminal";
 import { openDatabase } from "../db/database.js";
+import { loadConfig } from "../utils/config.js";
+import { printInfo, printSuccess } from "../utils/output.js";
 import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
-import ora from "ora";
-import { printInfo, printSuccess, printError } from "../utils/output.js";
 
 export function registerLoginCommand(program: Command): void {
 	program

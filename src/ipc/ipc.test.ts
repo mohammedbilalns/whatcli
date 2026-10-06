@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { IpcServer } from "./server.js";
+import { describe, expect, it } from "vitest";
 import { IpcClient } from "./client.js";
+import { IpcServer } from "./server.js";
 
 describe("ipc", () => {
 	it("round-trips a request and surfaces handler errors", async () => {

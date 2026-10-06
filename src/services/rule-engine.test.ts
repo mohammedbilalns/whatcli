@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { Message } from "../models/message.js";
+import type { Rule } from "../models/rules.js";
 import { RuleEngine } from "./rule-engine.js";
-import { Rule } from "../models/rules.js";
-import { Message } from "../models/message.js";
 
 const rule = (over: Partial<Rule> = {}): Rule => ({
 	id: 1,

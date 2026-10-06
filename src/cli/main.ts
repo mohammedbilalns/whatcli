@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { logger, baileysLogger } from "../utils/logger.js";
+import { Command } from "commander";
+import { baileysLogger, logger } from "../utils/logger.js";
 import { registerCommands } from "./commands.js";
 
 const pkgPath = path.join(

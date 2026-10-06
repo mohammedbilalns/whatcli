@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { WAMessage } from "@whiskeysockets/baileys";
+import { describe, expect, it } from "vitest";
 import { parseMessage } from "./parser.js";
 
 // Real traffic captured from our own watch session (Phase 3).

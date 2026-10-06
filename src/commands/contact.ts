@@ -1,9 +1,9 @@
-import { Command } from "commander";
+import type { Command } from "commander";
 import { openDatabase } from "../db/database.js";
-import { loadConfig } from "../utils/config.js";
 import { ContactStore } from "../services/contact-store.js";
-import { withSocket } from "./with-socket.js";
+import { loadConfig } from "../utils/config.js";
 import { resolveChat } from "../whatsapp/jid.js";
+import { withSocket } from "./with-socket.js";
 
 export function registerContactCommand(program: Command): void {
 	const contact = program.command("contact").description("Contact operations");
@@ -35,7 +35,7 @@ async function rename(target: string, alias: string): Promise<void> {
 		const chatsHit = resolveChat(db, target);
 		const jid =
 			found.length === 1
-				? found[0]!.jid
+				? found[0]?.jid
 				: chatsHit?.ok
 					? chatsHit.jid
 					: undefined;
@@ -47,9 +47,9 @@ async function rename(target: string, alias: string): Promise<void> {
 		db.prepare("INSERT OR IGNORE INTO contacts (jid) VALUES (?)").run(jid);
 		row = store.byJid(jid);
 	}
-	store.setAlias(row!.jid, clean);
+	store.setAlias(row?.jid, clean);
 	console.log(
-		clean ? ` ${row!.jid} → "${clean}"` : `alias cleared for ${row!.jid}`,
+		clean ? ` ${row?.jid} → "${clean}"` : `alias cleared for ${row?.jid}`,
 	);
 	db.close();
 }

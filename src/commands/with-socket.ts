@@ -1,16 +1,16 @@
 import type { WASocket } from "@whiskeysockets/baileys";
-import { loadConfig } from "../utils/config.js";
-import type { Config } from "../utils/config.js";
+import type { Database } from "better-sqlite3";
 import { openDatabase } from "../db/database.js";
-import { MessageStore } from "../services/message-store.js";
-import { MessageService } from "../services/message-service.js";
-import { WhatsAppClient } from "../whatsapp/client.js";
-import { loadSession } from "../whatsapp/session.js";
-import { connectAndWait } from "../whatsapp/connect.js";
-import { resolveChat, type Resolution } from "../whatsapp/jid.js";
-import { Database } from "better-sqlite3";
 import { IpcClient } from "../ipc/client.js";
 import { IpcSender } from "../ipc/ipc-sender.js";
+import { MessageService } from "../services/message-service.js";
+import { MessageStore } from "../services/message-store.js";
+import type { Config } from "../utils/config.js";
+import { loadConfig } from "../utils/config.js";
+import { WhatsAppClient } from "../whatsapp/client.js";
+import { connectAndWait } from "../whatsapp/connect.js";
+import { type Resolution, resolveChat } from "../whatsapp/jid.js";
+import { loadSession } from "../whatsapp/session.js";
 
 /** Thrown for user-facing errors (bad name, missing message) — printed, exit 1. */
 export class UserError extends Error {}

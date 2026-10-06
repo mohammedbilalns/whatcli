@@ -1,10 +1,9 @@
-import { rmSync } from "node:fs";
-import type { Command } from "commander";
 import { DisconnectReason } from "@whiskeysockets/baileys";
-import { loadConfig } from "../utils/config.js";
-import { connectAndWait } from "../whatsapp/connect.js";
+import type { Command } from "commander";
 import { openDatabase } from "../db/database.js";
+import { loadConfig } from "../utils/config.js";
 import { useSqliteAuthState } from "../whatsapp/auth.js";
+import { connectAndWait } from "../whatsapp/connect.js";
 
 export function registerLogoutCommand(program: Command): void {
 	program

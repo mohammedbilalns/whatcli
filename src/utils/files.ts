@@ -33,7 +33,7 @@ export function extFromMime(mimetype: string): string {
 export function mediaSubdir(
 	kind: "image" | "video" | "audio" | "document" | "sticker",
 ): string {
-	if (kind === "video" || kind === "audio") return kind + "s"; // videos/ audio/
+	if (kind === "video" || kind === "audio") return `${kind}s`; // videos/ audio/
 	if (kind === "document") return "documents";
 	return "images";
 }

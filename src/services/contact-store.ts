@@ -33,7 +33,8 @@ push_name = COALESCE(excluded.push_name, contacts.push_name)
 		const direct = this.db
 			.prepare("SELECT alias, name FROM contacts WHERE jid = ?")
 			.get(jid) as { alias: string | null; name: string | null } | undefined;
-		if (direct?.alias ?? direct?.name) return direct.alias ?? direct.name!;
+		if (direct?.alias ?? direct?.name)
+			return direct.alias ?? (direct.name as string);
 
 		// crossed the LID/phone divide? follow the link
 		const linked = this.db

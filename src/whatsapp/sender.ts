@@ -1,7 +1,8 @@
-import type { Message } from "../models/message.js";
-import { GroupInfo } from "../models/groups.js";
 import type { WAMessage } from "@whiskeysockets/baileys";
+import type { GroupInfo } from "../models/groups.js";
+import type { Message } from "../models/message.js";
 import type { ReplyTarget } from "./client.js";
+
 export type { ReplyTarget };
 
 export interface Sender {

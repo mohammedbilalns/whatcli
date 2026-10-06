@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
+import { describe, expect, it } from "vitest";
 import { migrate } from "../db/migrate.js";
-import { MessageStore } from "./message-store.js";
 import type { Message } from "../models/message.js";
+import { MessageStore } from "./message-store.js";
 
 const fixture: Message = {
 	id: "TEST1",

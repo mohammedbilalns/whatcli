@@ -1,6 +1,7 @@
 // src/whatsapp/jid.test.ts
-import { describe, expect, it } from "vitest";
+
 import Database from "better-sqlite3";
+import { describe, expect, it } from "vitest";
 import { migrate } from "../db/migrate.js";
 import { resolveChat } from "./jid.js";
 

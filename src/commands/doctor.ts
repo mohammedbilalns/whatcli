@@ -1,6 +1,6 @@
-import { Command } from "commander";
-import { loadConfig } from "../utils/config.js";
+import type { Command } from "commander";
 import { openDatabase } from "../db/database.js";
+import { loadConfig } from "../utils/config.js";
 import { logger } from "../utils/logger.js";
 
 export function registerDoctorCommand(program: Command): void {

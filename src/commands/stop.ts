@@ -1,6 +1,6 @@
 import { program } from "commander";
-import { loadConfig } from "../utils/config.js";
 import { IpcClient } from "../ipc/client.js";
+import { loadConfig } from "../utils/config.js";
 
 program
 	.command("stop")
