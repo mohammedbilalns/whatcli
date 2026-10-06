@@ -41,8 +41,8 @@ if (digits.length < 10) {
     console.log('That does not look like a phone number (use full international format).');
     process.exit(1);
   }
-  await withSocket(async ({ sock }) => {
-    const results = await sock.onWhatsApp(digits); 
+  await withSocket(async ({ service }) => {
+    const results = await service.lookupPhone(digits); 
     if(!results || results.length === 0) {
       console.log('No WhatsApp account for that number.');
       return 

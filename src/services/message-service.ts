@@ -1,14 +1,15 @@
 import type { Message } from '../models/message.js';
 import type { MessageStore } from './message-store.js';
-import type { ReplyTarget, WhatsAppClient } from '../whatsapp/client.js';
+import type { ReplyTarget} from '../whatsapp/client.js';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { reconstructMediaMessage, describeMedia } from '../whatsapp/media.js';
 import { mediaSubdir, ensureDir, extFromMime } from '../utils/files.js';
+import { Sender } from '../whatsapp/sender.js';
 
 export class MessageService {
   constructor(
-    private readonly client: WhatsAppClient,
+    private readonly client:Sender,
     private readonly store: MessageStore,
   ) {}
 
@@ -30,6 +31,8 @@ async sendReaction(chatJid: string, target: ReplyTarget, emoji: string): Promise
   this.store.saveMessage(sent);
   return sent;
 }
+
+
 
 
 async sendImage(chatJid: string, filePath: string, caption?: string): Promise<Message> {
@@ -68,6 +71,18 @@ async downloadAndSave(messageId: string, mediaDir: string): Promise<string> {
   return target;
 }
 
+
+  async groupInfo(jid: string) {
+    return this.client.groupInfo(jid);
+  }
+
+  async lookupPhone(phone: string) {
+    return this.client.lookupPhone(phone);
+  }
+
+  async downloadMediaVia(raw: any) {
+    return this.client.downloadMedia(raw);
+  }
 }
 
 

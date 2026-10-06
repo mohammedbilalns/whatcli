@@ -9,6 +9,8 @@ import { loadSession } from '../whatsapp/session.js';
 import { connectAndWait } from '../whatsapp/connect.js';
 import { resolveChat, type Resolution } from '../whatsapp/jid.js';
 import { Database } from 'better-sqlite3';
+import { IpcClient } from '../ipc/client.js';
+import { IpcSender } from '../ipc/ipc-sender.js';
 
 /** Thrown for user-facing errors (bad name, missing message) — printed, exit 1. */
 export class UserError extends Error {}
@@ -24,10 +26,25 @@ export function resolveOrThrow(db: Database, name: string): Extract<Resolution, 
 
 /** Connect, run fn with a ready service, always tear down cleanly. */
 export async function withSocket(
-  fn: (ctx: { sock: WASocket; service: MessageService; store: MessageStore; db: Database; config: Config }) => Promise<void>,
+  fn: (ctx: { sock?: WASocket; service: MessageService; store: MessageStore; db: Database; config: Config }) => Promise<void>,
 ): Promise<void> {
   const config = loadConfig();
   const db = openDatabase(config);
+  const ipc = new IpcClient(config.ipcPath)
+
+  if (await ipc.alive()) {
+    try {
+      const store = new MessageStore(db);
+      const service = new MessageService(new IpcSender(ipc), store);
+      await fn({ service, store, db, config });
+      db.close();
+      return;
+    } catch (err) {
+      if (!(err instanceof UserError)) throw err; // UserError prints below as usual
+      console.log(err.message);
+      process.exit(1);
+    }
+  }
 
   const session = await loadSession(config);
   if (!session.hasSession) {

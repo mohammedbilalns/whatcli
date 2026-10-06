@@ -1,6 +1,5 @@
 import type { Command } from 'commander';
 import { withSocket, resolveOrThrow, UserError } from './with-socket.js';
-import { fetchGroupInfo } from '../whatsapp/groups.js';
 import { isGroupChat, jidLabel} from '../whatsapp/jid.js';
 
 export function registerGroupCommand(program: Command): void {
@@ -12,13 +11,13 @@ export function registerGroupCommand(program: Command): void {
 }
 
 async function groupInfo(name: string): Promise<void> {
-  await withSocket(async ({ sock, store, db }) => {
+  await withSocket(async ({ service, store, db }) => {
     const resolved = resolveOrThrow(db, name);
     if (!isGroupChat(resolved.jid)) {
       throw new UserError(`"${resolved.label}" is not a group.`);
     }
 
-    const info = await fetchGroupInfo(sock, resolved.jid);
+    const info = await service.groupInfo(resolved.jid);
     if (info.name && info.name !== resolved.jid) {
       store.updateChatName(resolved.jid, info.name); // keep the stored name fresh
     }
