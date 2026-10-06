@@ -10,6 +10,11 @@ import { logger } from '../utils/logger.js';
 import { registerHistorySync } from '../whatsapp/history.js';
 import { jidLabel } from '../whatsapp/jid.js';
 import { ContactStore } from '../services/contact-store.js';
+import { RuleStore } from '../services/rule-store.js';
+import { WhatsAppClient } from '../whatsapp/client.js';
+import { MessageService } from '../services/message-service.js';
+import { RuleEngine } from '../services/rule-engine.js';
+import { Automation } from '../services/automation.js';
 
 export function registerWatchCommand(program: Command): void {
   program
@@ -50,10 +55,17 @@ async function watch(): Promise<void> {
   const db = openDatabase(config)
   const store = new MessageStore(db)
   const contacts = new ContactStore(db);     
+  const ruleStore = new RuleStore(db)
+
   let ingested = 0 
   log(`storing to ${config.dbPath}`)
   // fires on EVERY socket, including post-reconnect ones.
   manager.onSocket((sock) => {
+
+    const client = new WhatsAppClient(sock);                  // outbound, per-socket
+     const service = new MessageService(client, store);        // watch's own service
+     const engine = new RuleEngine(ruleStore.activeRules());   // snapshot per socket
+     const automation = new Automation(engine, ruleStore, service, log);
    
     registerMessageListener(sock, (message, {live}) =>{
       try {
@@ -61,10 +73,12 @@ async function watch(): Promise<void> {
         ingested += 1 
       } catch (err) {
         logger.error({err}, 'failed to store message')
-
       }
 
-      if (live) console.log(formatMessage(message, (j) => contacts.displayName(j))); // ← resolver
+      if (live){
+        console.log(formatMessage(message, (j) => contacts.displayName(j))); 
+        void automation.handle(message)
+      } 
     })
 
     sock.ev.on('contacts.update', (updates) => {

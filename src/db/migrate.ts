@@ -80,6 +80,23 @@ UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS 
 `);
     },
   },
+{
+  name: '005_rules',
+  up: (db) => {
+    db.exec(`
+      CREATE TABLE rules (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        trigger     TEXT NOT NULL,          -- keyword:hello  |  regex:^ping$         action      TEXT NOT NULL,          -- reply (more later: react)
+        value       TEXT NOT NULL,          -- the reply text / emoji
+        chat        TEXT NOT NULL DEFAULT '*',  -- JID, '*', or 'direct'
+        enabled     INTEGER NOT NULL DEFAULT 1,
+        hit_count   INTEGER NOT NULL DEFAULT 0,
+        last_fired  TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+  },
+},
 ]
 
 
