@@ -26,5 +26,6 @@ export interface Message {
   pushName?: string;
   chatAltId?: string;
   senderAltId?: string;
+  mediaJson?: string;
 }
 

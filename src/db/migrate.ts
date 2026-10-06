@@ -50,6 +50,12 @@ updated_at TEXT NOT NULL DEFAULT (datetime('now'))
              CREATE INDEX idx_chats_alt ON chats (alt_jid);`);
   },
 },
+{
+  name: '003_messages_media_json',
+  up: (db) => {
+    db.exec('ALTER TABLE messages ADD COLUMN media_json TEXT;');
+  },
+},
 ]
 
 
