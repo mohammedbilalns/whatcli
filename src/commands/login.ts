@@ -56,7 +56,45 @@ async function login(): Promise<void> {
     const phone = me?.id ? phoneFromJid(me.id) : 'unknown';
     printSuccess(`Logged in as: ${phone} ${me?.name ? `(${me.name})` : ''}`);
     
+    spinner.start('Syncing initial history... (this may take a moment)');
+    const { MessageStore } = await import('../services/message-store.js');
+    const { ContactStore } = await import('../services/contact-store.js');
+    const { registerHistorySync } = await import('../whatsapp/history.js');
+    
+    const store = new MessageStore(db);
+    const contactsStore = new ContactStore(db);
+    let historyReceived = false;
+    let totalMessages = 0;
+    let totalChats = 0;
+    let totalContacts = 0;
+
+    sock.ev.on('contacts.upsert', (contacts_arr) => {
+      for (const c of contacts_arr) {
+        const name = c.name || c.notify || c.verifiedName;
+        if (c.id && name) contactsStore.upsertName(c.id, name);
+      }
+    });
+
+    await new Promise<void>((resolve) => {
+      let timeout = setTimeout(resolve, 15000);
+      
+      registerHistorySync(sock, (batch) => {
+        historyReceived = true;
+        const stored = store.ingestHistory(batch);
+        totalMessages += stored;
+        totalChats += batch.chats.length;
+        totalContacts += batch.contacts.length;
+        spinner.text = `Syncing... ${totalMessages} messages, ${totalChats} chats, ${totalContacts} contacts`;
+        
+        clearTimeout(timeout);
+        timeout = setTimeout(resolve, 3000);
+      });
+    });
+
+    spinner.succeed(historyReceived ? `Sync complete: ${totalMessages} messages, ${totalChats} chats, ${totalContacts} contacts` : 'Connected (No history received immediately).');
+
     await sock.end(undefined);
+    db.close();
     process.exit(0);
   }
 

@@ -17,7 +17,25 @@ A pure Command Line Interface (CLI) for interacting with the WhatsApp backend.
 - [x] **Interactivity:** Reply to and react to specific messages (`reply`, `react`)
 - [x] **Search:** Search through locally stored messages (`search`)
 - [x] **Automations:** Trigger auto-replies or reactions based on regex or keywords (`wacli rule`)
-- [x] **Live Listening:** Watch incoming messages in real-time (`watch`)
+- [x] **Daemon Mode:** Background service that owns the connection, stores messages, and serves IPC (`daemon`)
+
+## Usage Highlights
+
+### Starting the Daemon
+WhatCLI now runs a background daemon that handles connections and IPC.
+```bash
+wacli daemon
+# Or to run without printing live messages:
+wacli daemon --quiet
+```
+This daemon architecture makes the DB fast and allows other commands (`send`, `chats`) to interact instantly over IPC.
+
+### Login Flow
+You can log in by scanning a QR code provided in the terminal:
+```bash
+wacli login
+```
+*Note: You can press `q` at any time to cancel the login process. Upon logging in, WhatCLI will automatically sync your initial contacts, chats, and messages.*
 
 ### Planned / Future Features
 - [ ] **Group Administration:** Create groups, add/remove participants, modify group info.
