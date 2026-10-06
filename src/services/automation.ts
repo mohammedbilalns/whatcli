@@ -20,10 +20,8 @@ export class Automation {
     const hit = this.engine.match(msg);
     if (!hit) return;
 
-    // cooldown (re-create the engine on rule changes resets this — acceptable for v1)
-    const last = this.lastFired.get(hit.rule.id) ?? 0;
-    if (Date.now() - last < COOLDOWN_MS) return;
-
+    // Note: Removed the 30s cooldown to allow firing on every message.
+    // Be careful not to create infinite loops with other bots!
     this.lastFired.set(hit.rule.id, Date.now());
 
     try {
