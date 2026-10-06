@@ -21,33 +21,31 @@ import { registerContactsCommand } from "../commands/contacts.js";
 import { registerRuleCommand } from "../commands/rule.js";
 import { registerRulesCommand } from "../commands/rules.js";
 
-// commands registry 
+// commands registry
 const commands = [
-  registerLoginCommand, 
-  registerStatusCommand,
-  registerDoctorCommand,
-  registerDaemonCommand,
-  registerLogoutCommand,
-  registerChatsCommand,
-  registerHistoryCommand, 
-  registerSendCommand,
-  registerReactCommand,
-  registerReplyCommand,
-  registerMediaCommand,
-  registerSendImageCommand,
-  registerSearchCommand,
-  registerSendDocumentCommand,
-  registerGroupsCommand,
-  registerGroupCommand,
-  registerContactsCommand,
-  registerContactCommand,
-  registerRuleCommand,
-  registerRulesCommand
-]
-export function registerCommands(program : Command){
-
-  for (const registerCommand of commands) {
-    registerCommand(program)
-  }
-
+	registerLoginCommand,
+	registerStatusCommand,
+	registerDoctorCommand,
+	registerDaemonCommand,
+	registerLogoutCommand,
+	registerChatsCommand,
+	registerHistoryCommand,
+	registerSendCommand,
+	registerReactCommand,
+	registerReplyCommand,
+	registerMediaCommand,
+	registerSendImageCommand,
+	registerSearchCommand,
+	registerSendDocumentCommand,
+	registerGroupsCommand,
+	registerGroupCommand,
+	registerContactsCommand,
+	registerContactCommand,
+	registerRuleCommand,
+	registerRulesCommand,
+];
+export function registerCommands(program: Command) {
+	for (const registerCommand of commands) {
+		registerCommand(program);
+	}
 }

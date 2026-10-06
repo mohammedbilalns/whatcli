@@ -1,24 +1,22 @@
-import { describe, expect, it } from 'vitest';
-import { migrate } from '../db/migrate';
-import Database from 'better-sqlite3';
-import { ContactStore } from './contact-store';
+import { describe, expect, it } from "vitest";
+import { migrate } from "../db/migrate";
+import Database from "better-sqlite3";
+import { ContactStore } from "./contact-store";
 
-describe('ContactStore', () => {
-  it('alias beats every other name, links sync names', () => {
-    const db = new Database(':memory:');
+describe("ContactStore", () => {
+	it("alias beats every other name, links sync names", () => {
+		const db = new Database(":memory:");
 
-    migrate(db);
+		migrate(db);
 
-    const store = new ContactStore(db);
+		const store = new ContactStore(db);
 
-    store.upsertName('111@lid', 'Pushy');
+		store.upsertName("111@lid", "Pushy");
 
-    db.prepare(
-      "INSERT INTO contact_links VALUES ('111@lid', '919000000001@s.whatsapp.net')"
-    ).run();
+		db.prepare(
+			"INSERT INTO contact_links VALUES ('111@lid', '919000000001@s.whatsapp.net')",
+		).run();
 
-    expect(
-      store.displayName('919000000001@s.whatsapp.net')
-    ).toBe('Pushy');
-  });
+		expect(store.displayName("919000000001@s.whatsapp.net")).toBe("Pushy");
+	});
 });
