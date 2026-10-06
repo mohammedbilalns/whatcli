@@ -5,7 +5,8 @@ import makeWASocket, {
   isJidStatusBroadcast,
   isJidNewsletter,
   CacheStore,
-  GroupMetadata
+  GroupMetadata,
+  proto
 } from "@whiskeysockets/baileys";
 import { baileysLogger } from "../utils/logger.js";
 import NodeCache from '@cacheable/node-cache';
@@ -14,6 +15,7 @@ import NodeCache from '@cacheable/node-cache';
 const msgRetryCounterCache = new NodeCache() as CacheStore;
 
 const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false }) as NodeCache<GroupMetadata>;
+const messageStore = new Map<string, proto.IMessage>();
 
 /**
  * Creates a Baileys WhatsApp Web socket.
@@ -39,9 +41,15 @@ export function createWASocket( auth : AuthenticationState) {
 
     markOnlineOnConnect: false ,
 
-    browser: Browsers.ubuntu('Chrome'),
+    browser: ['Ubuntu', 'Chrome', '20.0.04'],
+    syncFullHistory: true,
     connectTimeoutMs: 20_000,
     keepAliveIntervalMs: 30_000,
+
+    getMessage: async (key) => {
+      const id = `${key.remoteJid}:${key.id}`;
+      return messageStore.get(id);
+    },
   });
 
 
@@ -56,6 +64,14 @@ export function createWASocket( auth : AuthenticationState) {
 
   sock.ev.on('groups.update', ([event]) => void refreshGroup(event?.id));
   sock.ev.on('group-participants.update', (event) => void refreshGroup(event?.id));
+
+  sock.ev.on('messages.upsert', ({ messages }) => {
+    for (const msg of messages) {
+      if (msg.key.id && msg.message) {
+        messageStore.set(`${msg.key.remoteJid}:${msg.key.id}`, msg.message);
+      }
+    }
+  });
 
   return sock;
 }

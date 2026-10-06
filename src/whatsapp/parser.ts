@@ -5,6 +5,9 @@ export type ParseResult =
 | { ok: true; message: Message }
 | { ok: false; reason: 'protocol-only' | 'empty' };
 
+
+const MEDIA_TYPES: ReadonlySet<string> = new Set(['image', 'video', 'audio', 'voice', 'document', 'sticker']);
+
 type Content = NonNullable<WAMessage['message']>;
 
 // include extra runtime fields 
@@ -40,6 +43,7 @@ export function parseMessage(raw: WAMessage): ParseResult {
       pushName: raw.pushName || undefined,
       chatAltId: key.remoteJidAlt || undefined,
       senderAltId: (key.participantAlt as string | undefined) || key.remoteJidAlt || undefined,
+      mediaJson: MEDIA_TYPES.has(classified.type) ? JSON.stringify(content) : undefined,
     },
   };
 }

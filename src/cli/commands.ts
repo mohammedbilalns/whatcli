@@ -8,15 +8,33 @@ import { registerChatsCommand } from "../commands/chats.js";
 import { registerHistoryCommand } from "../commands/history.js";
 import { registerSearchCommand } from "../commands/search.js";
 import { registerSendCommand } from "../commands/send.js";
+import { registerReactCommand } from "../commands/react.js";
+import { registerReplyCommand } from "../commands/reply.js";
+import { registerMediaCommand } from "../commands/media.js";
+import { registerSendDocumentCommand } from "../commands/send-document.js";
+import { registerSendImageCommand } from "../commands/send-image.js";
 
+// commands registry 
+const commands = [
+  registerLoginCommand, 
+  registerStatusCommand,
+  registerDoctorCommand,
+  registerWatchCommand,
+  registerLogoutCommand,
+  registerChatsCommand,
+  registerHistoryCommand, 
+  registerSendCommand,
+  registerReactCommand,
+  registerReplyCommand,
+  registerMediaCommand,
+  registerSendImageCommand,
+  registerSearchCommand,
+  registerSendDocumentCommand
+]
 export function registerCommands(program : Command){
-  registerLoginCommand(program)
-  registerStatusCommand(program)
-  registerDoctorCommand(program)
-  registerWatchCommand(program)
-  registerLogoutCommand(program)
-  registerChatsCommand(program)
-  registerHistoryCommand(program)
-  registerSearchCommand(program)
-  registerSendCommand(program)
+
+  for (const registerCommand of commands) {
+    registerCommand(program)
+  }
+
 }
