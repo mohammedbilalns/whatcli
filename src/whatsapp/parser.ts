@@ -34,7 +34,7 @@ export function parseMessage(raw: WAMessage): ParseResult {
     message: {
       id,
       chatId: key.remoteJid ?? '',
-      senderId: key.participant || key.remoteJid || '',
+      senderId: key.participant || raw.participant || key.remoteJid || '',
       fromMe: !!key.fromMe,
       timestamp: toDate(raw.messageTimestamp),
       type: classified.type,

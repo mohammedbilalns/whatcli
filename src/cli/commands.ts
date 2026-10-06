@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { registerLoginCommand } from "../commands/login.js";
 import { registerStatusCommand } from "../commands/status.js";
 import { registerDoctorCommand } from "../commands/doctor.js";
-import { registerWatchCommand } from "../commands/watch.js";
+import { registerDaemonCommand } from "../commands/daemon.js";
 import { registerLogoutCommand } from "../commands/logout.js";
 import { registerChatsCommand } from "../commands/chats.js";
 import { registerHistoryCommand } from "../commands/history.js";
@@ -23,7 +23,7 @@ const commands = [
   registerLoginCommand, 
   registerStatusCommand,
   registerDoctorCommand,
-  registerWatchCommand,
+  registerDaemonCommand,
   registerLogoutCommand,
   registerChatsCommand,
   registerHistoryCommand, 

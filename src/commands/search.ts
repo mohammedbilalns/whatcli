@@ -35,7 +35,6 @@ function handleSearch(text: string): void {
   );
 
   for (const row of rows) {
-
     const chatLabel = contacts.chatName(row.chat_id) ?? jidLabel(row.chat_id); 
     const msg = {
       id: row.id,
@@ -49,6 +48,7 @@ function handleSearch(text: string): void {
       pushName: row.push_name ?? undefined,
     };
 
-    console.log(`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}`);   }
+    console.log(`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}\n`);
+  }
   db.close();
 }

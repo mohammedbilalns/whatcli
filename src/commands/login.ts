@@ -56,7 +56,11 @@ async function login(): Promise<void> {
     const phone = me?.id ? phoneFromJid(me.id) : 'unknown';
     printSuccess(`Logged in as: ${phone} ${me?.name ? `(${me.name})` : ''}`);
     
+    const { waitForHistorySync } = await import('../whatsapp/history.js');
+    await waitForHistorySync(sock, db, spinner);
+
     await sock.end(undefined);
+    db.close();
     process.exit(0);
   }
 

@@ -15,18 +15,15 @@ export function registerHistoryCommand(program: Command): void {
     .action((name: string, opts: { limit: string }) => history(name, opts));
 }
 
-async function history(name: string, opts: { limit: string ; ids?: boolean }): Promise<void> {
+function history(name: string, opts: { limit: string ; ids?: boolean }): void {
   const limit = Number(opts.limit) || 50;
 
-  const config = loadConfig();
-  const db = openDatabase(config);
-
+  const db = openDatabase(loadConfig());
+  
   const resolved = resolveChat(db, name);
   if (!resolved.ok) {
-    if (resolved.error === 'not-found') {
-      printError(`No chat matching "${name}" found.`);
-      printError('Run "wacli chats" to list stored chats.');
-    } else {
+    if (resolved.error === 'not-found') printError(`No chat matching "${name}" found. Run "wacli chats".`);
+    else {
       printError(`"${name}" matches several chats — be more specific:`);
       for (const c of resolved.candidates) printError(`  ${c.label}   (${c.jid})`);
     }
@@ -37,7 +34,6 @@ async function history(name: string, opts: { limit: string ; ids?: boolean }): P
   const store = new MessageStore(db);
   const contacts = new ContactStore(db);
   const messages = store.listMessages(resolved.jid, limit);
-  db.close();
 
   printInfo(resolved.label);
   const resolveName = (jid: string) => contacts.displayName(jid)
@@ -45,10 +41,13 @@ async function history(name: string, opts: { limit: string ; ids?: boolean }): P
   if (messages.length === 0) {
     printInfo('No stored messages for this chat.');
     printInfo('(Only messages seen while watching, plus history sync, are stored.)');
+    db.close();
     return;
   }
 
   for (const m of messages) {
-    printData(opts.ids ? `${m.id}\t${formatMessage(m, resolveName)}` : formatMessage(m, resolveName));
+    printData(opts.ids ? `${m.id}\t${formatMessage(m, resolveName)}\n` : `${formatMessage(m, resolveName)}\n`);
   }
+  
+  db.close();
 }

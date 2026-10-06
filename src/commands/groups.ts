@@ -16,7 +16,7 @@ function groups(): void {
   db.close();
 
   if (rows.length === 0) {
-    printInfo('No groups stored yet — run "wacli watch" to sync.');
+    printInfo('No groups stored yet — run "wacli daemon" to sync.');
     return;
   }
   

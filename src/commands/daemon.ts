@@ -61,7 +61,7 @@ async function daemon(verbose: boolean): Promise<void> {
       catch (err) { logger.error({ err }, 'failed to store message'); }
 
       if (live) {
-        if (verbose) console.log(formatMessage(message, (j) => contacts.displayName(j)));
+        if (verbose) console.log(formatMessage(message, (j) => contacts.displayName(j)) + '\n');
         void automation.handle(message);
       }
     });
