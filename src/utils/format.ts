@@ -14,21 +14,23 @@ export function formatMessage(m: Message, resolveName?: NameResolver): string {
   return `[${time}] ${sender}${chat} > ${describe(m)}`;
 }
 
+import pc from 'picocolors';
+
 function describe(m: Message): string {
-  const reply = m.replyToId && m.type !== 'reaction' ? '   ⤷ (reply)' : '';
+  const reply = m.replyToId && m.type !== 'reaction' ? pc.dim('   ⤷ (reply)') : '';
   switch (m.type) {
     case 'text':     return `${m.text ?? '(no text)'}${reply}`;
-    case 'image':    return `[image${caption(m)}]${reply}`;
-    case 'video':    return `[video${caption(m)}]${reply}`;
-    case 'audio':    return `[audio file]${reply}`;
-    case 'voice':    return `[voice note]${reply}`;
-    case 'document': return `[document${caption(m)}]${reply}`;
-    case 'sticker':  return `[sticker]${reply}`;
-    case 'reaction': return `[reacted ${m.text ?? '?'}]`;
-    case 'location': return '[location]';
-    case 'contact':  return `[contact${caption(m)}]`;
-    case 'system':   return '[system message]';
-    case 'unknown':  return '[unsupported message]';
+    case 'image':    return pc.magenta(`[image${caption(m)}]`) + reply;
+    case 'video':    return pc.magenta(`[video${caption(m)}]`) + reply;
+    case 'audio':    return pc.magenta(`[audio file]`) + reply;
+    case 'voice':    return pc.magenta(`[voice note]`) + reply;
+    case 'document': return pc.magenta(`[document${caption(m)}]`) + reply;
+    case 'sticker':  return pc.magenta(`[sticker]`) + reply;
+    case 'reaction': return pc.yellow(`[reacted ${m.text ?? '?'}]`);
+    case 'location': return pc.magenta('[location]');
+    case 'contact':  return pc.magenta(`[contact${caption(m)}]`);
+    case 'system':   return pc.gray('[system message]');
+    case 'unknown':  return pc.gray('[unsupported message]');
   }
 }
 

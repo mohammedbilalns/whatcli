@@ -1,7 +1,7 @@
 import process from 'node:process';
 import pc from 'picocolors';
 
-export function printTable(headers: string[], rows: string[][]) {
+export function printTable(headers: string[], rows: string[][], opts?: { border?: boolean, padding?: boolean }) {
   if (process.stdout.isTTY) {
     const widths = headers.map((h, i) => Math.max(h.length, ...rows.map(r => String(r[i] ?? '').length)));
     const headerStr = headers.map((h, i) => h.padEnd(widths[i])).join('   ');
@@ -9,6 +9,7 @@ export function printTable(headers: string[], rows: string[][]) {
     console.log(pc.dim('─'.repeat(headerStr.length)));
     for (const row of rows) {
       console.log(row.map((val, i) => String(val ?? '').padEnd(widths[i])).join('   '));
+      if (opts?.padding) console.log(); // blank line
     }
   } else {
     for (const row of rows) {

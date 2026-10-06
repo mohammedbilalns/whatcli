@@ -35,7 +35,7 @@ async function history(name: string, opts: { limit: string ; ids?: boolean }): P
     }
 
     for (const m of messages) {
-      printData(opts.ids ? `${m.id}\t${formatMessage(m, resolveName)}` : formatMessage(m, resolveName));
+      printData(opts.ids ? `${m.id}\t${formatMessage(m, resolveName)}\n` : `${formatMessage(m, resolveName)}\n`);
     }
   }, { syncHistory: true });
 }

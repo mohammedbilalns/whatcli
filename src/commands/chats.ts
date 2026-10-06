@@ -13,6 +13,7 @@ export function registerChatsCommand(program: Command): void {
     .action(() => chats());
 }
 
+import pc from 'picocolors';
 import { withSocket } from './with-socket.js';
 
 export function chats(): Promise<void> {
@@ -21,16 +22,27 @@ export function chats(): Promise<void> {
 
     if (rows.length === 0) {
       printInfo('No chats stored yet.');
-      printInfo('Run "wacli watch" — history sync will populate the database.');
+      printInfo('Run "wacli daemon" — history sync will populate the database.');
       return; 
     }
 
-    const tableData = rows.map(row => {
+    const directs = rows.filter(r => r.type === 'direct');
+    const groups = rows.filter(r => r.type === 'group');
+
+    const formatRow = (row: any) => {
       const name = (row.name ?? jidLabel(row.jid)).slice(0, 24);
       const last = row.last_message_at ? timeAgo(new Date(row.last_message_at)) : '—';
       return [String(row.id), row.type, name, last];
-    });
+    };
+
+    if (directs.length > 0) {
+      console.log(pc.cyan('\n─── DIRECT CHATS ───'));
+      printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], directs.map(formatRow), { padding: true });
+    }
     
-    printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], tableData);
+    if (groups.length > 0) {
+      console.log(pc.magenta('\n─── GROUP CHATS ───'));
+      printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], groups.map(formatRow), { padding: true });
+    }
   }, { syncHistory: true });
 }

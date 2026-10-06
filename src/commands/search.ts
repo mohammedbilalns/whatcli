@@ -49,7 +49,7 @@ function handleSearch(text: string): Promise<void> {
         pushName: row.push_name ?? undefined,
       };
 
-      console.log(`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}`);
+      console.log(`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}\n`);
     }
   }, { syncHistory: true });
 }
