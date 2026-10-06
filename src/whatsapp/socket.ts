@@ -14,7 +14,7 @@ import NodeCache from '@cacheable/node-cache';
 // Persist these caches outside the create function so they survive socket reconnects.
 const msgRetryCounterCache = new NodeCache() as CacheStore;
 
-const groupCache = new NodeCache({ stdTTL: 24 * 60 * 60, useClones: false }) as NodeCache<GroupMetadata>;
+const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false }) as NodeCache<GroupMetadata>;
 
 /**
  * Creates a Baileys WhatsApp Web socket.

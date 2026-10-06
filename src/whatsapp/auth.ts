@@ -2,9 +2,16 @@ import { AuthenticationCreds, AuthenticationState, BufferJSON, initAuthCreds, Si
 import { Database } from 'better-sqlite3';
 
 export async function useSqliteAuthState(db: Database): Promise<{ state: AuthenticationState, saveCreds: () => void }> {
+  const selectStmt = db.prepare('SELECT data FROM auth_state WHERE name = ?');
+  const insertStmt = db.prepare(`
+    INSERT INTO auth_state (name, data) VALUES (?, ?)
+    ON CONFLICT(name) DO UPDATE SET data = excluded.data
+  `);
+  const deleteStmt = db.prepare('DELETE FROM auth_state WHERE name = ?');
+
   const readData = (name: string) => {
     try {
-      const row = db.prepare('SELECT data FROM auth_state WHERE name = ?').get(name) as { data: string } | undefined;
+      const row = selectStmt.get(name) as { data: string } | undefined;
       if (row) {
         return JSON.parse(row.data, BufferJSON.reviver);
       }
@@ -15,14 +22,7 @@ export async function useSqliteAuthState(db: Database): Promise<{ state: Authent
   };
 
   const writeData = (name: string, data: any) => {
-    db.prepare(`
-      INSERT INTO auth_state (name, data) VALUES (?, ?)
-      ON CONFLICT(name) DO UPDATE SET data = excluded.data
-    `).run(name, JSON.stringify(data, BufferJSON.replacer));
-  };
-
-  const removeData = (name: string) => {
-    db.prepare('DELETE FROM auth_state WHERE name = ?').run(name);
+    insertStmt.run(name, JSON.stringify(data, BufferJSON.replacer));
   };
 
   let creds: AuthenticationCreds = readData('creds') || initAuthCreds();
@@ -36,28 +36,27 @@ export async function useSqliteAuthState(db: Database): Promise<{ state: Authent
           for (const id of ids) {
             const value = readData(`${type}-${id}`);
             if (value !== null) {
-              if (type === 'app-state-sync-key' && value) {
-                data[id] = value;
-              } else {
-                data[id] = value;
-              }
+              data[id] = value;
             }
           }
           return data;
         },
         set: async (data) => {
-          for (const category of Object.keys(data)) {
-            const keys = (data as any)[category];
-            for (const id of Object.keys(keys)) {
-              const value = keys[id];
-              const name = `${category}-${id}`;
-              if (value) {
-                writeData(name, value);
-              } else {
-                removeData(name);
+          const applySet = db.transaction((txData) => {
+            for (const category of Object.keys(txData)) {
+              const keys = (txData as any)[category];
+              for (const id of Object.keys(keys)) {
+                const value = keys[id];
+                const name = `${category}-${id}`;
+                if (value) {
+                  insertStmt.run(name, JSON.stringify(value, BufferJSON.replacer));
+                } else {
+                  deleteStmt.run(name);
+                }
               }
             }
-          }
+          });
+          applySet(data);
         }
       }
     },
