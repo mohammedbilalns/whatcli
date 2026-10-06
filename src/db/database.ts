@@ -11,7 +11,9 @@ export function openDatabase(config : Config) : Database.Database {
 
   mkdirSync(path.dirname(config.dbPath), {recursive: true})
   const db = new Database(config.dbPath)
-  db.pragma('jounal_mode = WAL' )
+  db.pragma('journal_mode = WAL');
+  db.pragma('synchronous = NORMAL');
+  db.pragma('temp_store = MEMORY');
   migrate(db)
   return db 
 }

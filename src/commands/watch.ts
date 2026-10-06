@@ -82,9 +82,17 @@ async function watch(): Promise<void> {
       } 
     })
 
+    sock.ev.on('contacts.upsert', (contacts_arr) => {
+      for (const c of contacts_arr) {
+        const name = c.name || c.notify || c.verifiedName;
+        if (c.id && name) contacts.upsertName(c.id, name);
+      }
+    });
+
     sock.ev.on('contacts.update', (updates) => {
       for (const u of updates) {
-        if (u.id && u.notify) contacts.upsertName(u.id, u.notify);
+        const name = u.name || u.notify || u.verifiedName;
+        if (u.id && name) contacts.upsertName(u.id, name);
       }
     });
 

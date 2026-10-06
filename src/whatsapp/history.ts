@@ -3,7 +3,7 @@ import type { Message } from '../models/message.js';
 import { parseMessage } from './parser.js';
 
 export interface HistoryChat { jid: string; name?: string }
-export interface HistoryContact { jid: string; name?: string }
+export interface HistoryContact { jid: string; name?: string; notify?: string; verifiedName?: string }
 
 export interface HistoryBatch {
   chats: HistoryChat[];
@@ -29,7 +29,7 @@ export function registerHistorySync(sock: WASocket, onHistory: (batch: HistoryBa
         .map((c) => ({ jid: String(c.id), name: c.name ?? undefined }))
         .filter((c) => !skip(c.jid)),
       contacts: (sync.contacts ?? [])
-        .map((c) => ({ jid: String(c.id), name: c.name ?? undefined }))
+        .map((c: any) => ({ jid: String(c.id), name: c.name ?? undefined, notify: c.notify ?? undefined, verifiedName: c.verifiedName ?? undefined }))
         .filter((c) => !skip(c.jid)),
       messages,
     });
