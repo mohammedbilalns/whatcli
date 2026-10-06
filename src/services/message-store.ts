@@ -27,6 +27,9 @@ export interface MessageRow {
   timestamp: string;
   push_name: string | null 
 }
+export interface MediaRow {
+  id: string; chat_id: string; from_me: number; type: string; media_json: string | null;
+}
 
 export class MessageStore {
 
@@ -71,10 +74,10 @@ ON CONFLICT(jid) DO UPDATE SET name = COALESCE(chats.name, excluded.name)
     /** 
      *insert message if it is not already there else ignore  
      * */
-    this.stmtInsertMessage = db.prepare(`
-INSERT OR IGNORE INTO messages
-(id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name)
-VALUES (@id, @chat_id, @sender_id, @from_me, @type, @text, @reply_to_id, @timestamp, @push_name)
+this.stmtInsertMessage = db.prepare(`
+  INSERT OR IGNORE INTO messages
+  (id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name, media_json)
+  VALUES (@id, @chat_id, @sender_id, @from_me, @type, @text, @reply_to_id, @timestamp, @push_name, @media_json)
 `);
 
     /** 
@@ -172,6 +175,7 @@ ORDER BY last_message_at DESC`)
       reply_to_id: msg.replyToId ?? null,
       timestamp: msg.timestamp.toISOString(),
       push_name: msg.pushName ?? null,
+      media_json: msg.mediaJson ?? null,
     };
   }
 
@@ -221,6 +225,16 @@ getMessageById(id: string): { id: string; chat_id: string; sender_id: string; fr
   return this.db
     .prepare('SELECT id, chat_id, sender_id, from_me, text FROM messages WHERE id = ?')
     .get(id) as { id: string; chat_id: string; sender_id: string; from_me: number; text: string | null } | undefined;
+}
+
+getMediaById(id: string): MediaRow | undefined {
+  return this.db
+    .prepare('SELECT id, chat_id, from_me, type, media_json FROM messages WHERE id = ?')
+    .get(id) as MediaRow | undefined;
+}
+
+updateMediaJson(id: string, mediaJson: string): void {
+  this.db.prepare('UPDATE messages SET media_json = ? WHERE id = ?').run(mediaJson, id);
 }
 
 }

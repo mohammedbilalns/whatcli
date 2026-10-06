@@ -1,6 +1,10 @@
 import type { Message } from '../models/message.js';
 import type { MessageStore } from './message-store.js';
 import type { ReplyTarget, WhatsAppClient } from '../whatsapp/client.js';
+import { writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { reconstructMediaMessage, describeMedia } from '../whatsapp/media.js';
+import { mediaSubdir, ensureDir, extFromMime } from '../utils/files.js';
 
 export class MessageService {
   constructor(
@@ -8,14 +12,9 @@ export class MessageService {
     private readonly store: MessageStore,
   ) {}
 
-  /** Send a text, persist it, return it (with its real message ID). */
   async sendText(chatJid: string, text: string): Promise<Message> {
     const sent = await this.client.sendText(chatJid, text);
 
-    // Why store it ourselves: a socket does NOT receive its own sends back
-    // via messages.upsert. (Messages sent from your PHONE do arrive — as the
-    // fromMe "You >" lines you've seen in watch.) Storing here closes the gap;
-    // INSERT OR IGNORE makes it safe even if a watcher also captured it.
     this.store.saveMessage(sent);
     return sent;
   }
@@ -31,4 +30,44 @@ async sendReaction(chatJid: string, target: ReplyTarget, emoji: string): Promise
   this.store.saveMessage(sent);
   return sent;
 }
+
+
+async sendImage(chatJid: string, filePath: string, caption?: string): Promise<Message> {
+  const sent = await this.client.sendImage(chatJid, filePath, caption);
+  this.store.saveMessage(sent);   
+  return sent;
 }
+
+async sendDocument(chatJid: string, filePath: string): Promise<Message> {
+  const sent = await this.client.sendDocument(chatJid, filePath);
+  this.store.saveMessage(sent);
+  return sent;
+}
+
+async downloadAndSave(messageId: string, mediaDir: string): Promise<string> {
+  const row = this.store.getMediaById(messageId);
+  if (!row) throw new Error(`No stored message with id ${messageId}`);
+
+  const mediaJson = row.media_json;
+  if (!mediaJson) throw new Error('No media data stored for this message (it predates media support or has no media)');
+
+  const raw = reconstructMediaMessage({ ...row, media_json: mediaJson });
+  const desc = describeMedia(raw);
+  if (!desc) throw new Error('Stored message contains no downloadable media');
+
+  // ↓ renamed: this is the REFRESHED json from the retry path, not the stored one
+  const { buffer, mediaJson: refreshedJson } = await this.client.downloadMedia(raw);
+  if (refreshedJson) this.store.updateMediaJson(messageId, refreshedJson); // cache the refreshed URL
+
+  const dir = ensureDir(path.join(mediaDir, mediaSubdir(desc.kind)));
+  const name = desc.fileName
+    ? desc.fileName.replace(/[/\\]/g, '_')
+    : `${desc.kind}-${messageId.slice(0, 8)}.${extFromMime(desc.mimetype)}`;
+  const target = path.join(dir, name);
+  writeFileSync(target, buffer);
+  return target;
+}
+
+}
+
+

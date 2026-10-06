@@ -78,10 +78,6 @@ export function nextClose(sock: WASocket): Promise<{code: number; error?: Error}
   })
 }
 
-/**
- * Creates a socket, waits for it to open (or fail/timeout), and handles the
- * specific case where WhatsApp requests a client restart (code 515)
- */
 export async function connectAndWait(
   auth: AuthenticationState,
   saveCreds: () => Promise<void> | void,
@@ -92,7 +88,7 @@ export async function connectAndWait(
     const sock = createSocket(auth, saveCreds);
     const outcome = await awaitOpenOrClose(sock, options);
     if (outcome.status !== 'closed') return { sock, outcome };
-    if (outcome.code === DisconnectReason.restartRequired && attempt < MAX_RESTARTS) continue;
+    if (outcome.code !== DisconnectReason.loggedOut && attempt < MAX_RESTARTS) continue;
     return { sock, outcome };
   }
 }

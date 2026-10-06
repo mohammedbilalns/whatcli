@@ -10,7 +10,8 @@ import { registerSearchCommand } from "../commands/search.js";
 import { registerSendCommand } from "../commands/send.js";
 import { registerReactCommand } from "../commands/react.js";
 import { registerReplyCommand } from "../commands/reply.js";
-import { registerMediaCommand } from "../commands/send-document.js";
+import { registerMediaCommand } from "../commands/media.js";
+import { registerSendDocumentCommand } from "../commands/send-document.js";
 import { registerSendImageCommand } from "../commands/send-image.js";
 
 // commands registry 
@@ -27,7 +28,8 @@ const commands = [
   registerReplyCommand,
   registerMediaCommand,
   registerSendImageCommand,
-  registerSearchCommand
+  registerSearchCommand,
+  registerSendDocumentCommand
 ]
 export function registerCommands(program : Command){
 

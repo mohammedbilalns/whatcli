@@ -2,7 +2,12 @@ import type { WAMessage, WASocket } from '@whiskeysockets/baileys';
 import type { Message } from '../models/message.js';
 import { parseMessage } from './parser.js';
 import { isGroupChat } from './jid.js';
+import { downloadMediaMessage } from '@whiskeysockets/baileys';
+import { inferMime } from '../utils/files.js';
+import path from 'node:path';
 
+
+import { baileysLogger } from '../utils/logger.js';
 
 export interface ReplyTarget {
   id: string;
@@ -60,6 +65,46 @@ async sendReaction(chatJid: string, target: ReplyTarget, emoji: string): Promise
   const parsed = parseMessage(raw);
   if (!parsed.ok) throw new Error('reaction sent but response could not be parsed');
   return parsed.message;
+}
+
+
+private confirm(raw: WAMessage | undefined): Message {
+  if (!raw) throw new Error('send not confirmed by server (no ack)');
+  const parsed = parseMessage(raw);
+  if (!parsed.ok) throw new Error('send succeeded but the response could not be parsed');
+  return parsed.message;
+}
+
+async sendImage(chatJid: string, filePath: string, caption?: string): Promise<Message> {
+  return this.confirm(await this.sock.sendMessage(chatJid, {
+    image: { url: filePath },   // Baileys reads the file, encrypts, uploads, then sends
+    caption,
+  }));
+}
+
+
+
+async sendDocument(chatJid: string, filePath: string): Promise<Message> {
+  return this.confirm(await this.sock.sendMessage(chatJid, {
+    document: { url: filePath },
+    fileName: path.basename(filePath),
+    mimetype: inferMime(filePath),   // WhatsApp needs this to render the file correctly
+  }));
+
+  }
+
+
+async downloadMedia(raw: WAMessage): Promise<{ buffer: Buffer; mediaJson?: string }> {
+  const buffer = await downloadMediaMessage(
+    raw,
+    'buffer',
+    {},
+    {
+      logger: baileysLogger,
+      reuploadRequest: (msg) => this.sock.updateMediaMessage(msg)
+    }
+  );
+  return { buffer, mediaJson: JSON.stringify(raw.message) };
 }
 }
 
