@@ -38,6 +38,7 @@ wacli login
 *Note: You can press `q` at any time to cancel the login process. Upon logging in, WhatCLI will automatically sync your initial contacts, chats, and messages.*
 
 ### Planned / Future Features
+- [ ] **Plugin System:** Integrate with npm packages to allow custom extensions, scripts, and deeper integrations.
 - [ ] **Group Administration:** Create groups, add/remove participants, modify group info.
 - [ ] **Scheduled Messages:** Queue messages to be sent at a specific future time.
 - [ ] **Bulk Actions:** Send broadcast messages to multiple contacts.
@@ -45,3 +46,17 @@ wacli login
 
 ## Philosophy
 `whatcli` is built for developers and power users who want to script or interact with WhatsApp without leaving the terminal. By adhering to a strict CLI-only approach (no UI), it can be easily integrated into shell scripts, cron jobs, and other automation pipelines.
+
+## Comparison with Similar Tools
+
+While tools like `wa-automate-nodejs` (open-wa) and `whatsapp-web.js` share the goal of automating WhatsApp, they differ fundamentally in architecture and target audience. WhatCLI is a **ready-to-use application**, whereas others are libraries.
+
+| Feature / Tool | WhatCLI | wa-automate / whatsapp-web.js | Baileys (Library) |
+| :--- | :--- | :--- | :--- |
+| **Type** | Ready-to-use CLI & Daemon | Node.js Library (SDK) | Node.js Library (SDK) |
+| **Technology** | Native WebSocket Protocol | Headless Browser (Puppeteer) | Native WebSocket Protocol |
+| **Resource Usage** | Very Low | High (Runs full Chromium) | Very Low |
+| **Setup Required** | None (Zero coding required) | Requires writing custom scripts | Requires writing custom scripts |
+| **Built-in Database** | Yes (SQLite) | No | No |
+| **Built-in Automations** | Yes (Rule Engine) | No | No |
+| **Daemon / IPC** | Yes | No | No |

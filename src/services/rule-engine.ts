@@ -10,7 +10,10 @@ export interface RuleHit {
 const CACHE = new Map<string, RegExp>();   
 
 export class RuleEngine {
-  constructor(private readonly rules: Rule[]) {}
+  constructor(
+    private readonly rules: Rule[],
+    private readonly isContactSaved?: (jid: string) => boolean
+  ) {}
 
   match(msg: Message): RuleHit | null {
     if (msg.fromMe) return null;                                  // never react to ourselves (feedback loops!)
@@ -31,8 +34,12 @@ export class RuleEngine {
   }
 
   #inScope(rule: Rule, chatId: string): boolean {
-    if (rule.chat === '*') return !isGroupChat(chatId);   // wildcard NEVER fires in groups
-    if (rule.chat === 'direct') return !isGroupChat(chatId);
+    const isGroup = !!isGroupChat(chatId);
+    if (rule.chat === '*') return !isGroup;   // wildcard NEVER fires in groups
+    if (rule.chat === 'all') return true;
+    if (rule.chat === 'group') return isGroup;
+    if (rule.chat === 'direct') return !isGroup;
+    if (rule.chat === 'unknown') return !isGroup && (!this.isContactSaved || !this.isContactSaved(chatId));
     return rule.chat === chatId;                          // explicit JID — group or direct
   }
 

@@ -53,7 +53,13 @@ async function daemon(verbose: boolean): Promise<void> {
   manager.onSocket((sock) => {
     service = new MessageService(new WhatsAppClient(sock), store);
     const automation = new Automation(
-      new RuleEngine(ruleStore.activeRules()), ruleStore, service!, log,
+      new RuleEngine(
+        ruleStore.activeRules(),
+        (jid) => contacts.displayName(jid) !== null
+      ), 
+      ruleStore, 
+      service!, 
+      log,
     );
 
     registerMessageListener(sock, (message, { live }) => {
