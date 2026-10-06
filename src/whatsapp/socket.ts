@@ -58,7 +58,13 @@ export function createWASocket( auth : AuthenticationState) {
     try {
       groupCache.set(jid, await sock.groupMetadata(jid));
     } catch (err) {
-      baileysLogger.warn({ err, jid }, 'group metadata refresh failed');
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('item-not-found')) {
+        baileysLogger.info({ jid }, 'group no longer exists (deleted or you left) — skipping refresh');
+        groupCache.del(jid);
+        return;
+      }
+      baileysLogger.warn({ err, jid }, 'group metadata refresh failed')
     }
   };
 

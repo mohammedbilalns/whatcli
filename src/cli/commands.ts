@@ -13,6 +13,8 @@ import { registerReplyCommand } from "../commands/reply.js";
 import { registerMediaCommand } from "../commands/media.js";
 import { registerSendDocumentCommand } from "../commands/send-document.js";
 import { registerSendImageCommand } from "../commands/send-image.js";
+import { registerGroupCommand } from "../commands/group.js";
+import { registerGroupsCommand } from "../commands/groups.js";
 
 // commands registry 
 const commands = [
@@ -29,7 +31,9 @@ const commands = [
   registerMediaCommand,
   registerSendImageCommand,
   registerSearchCommand,
-  registerSendDocumentCommand
+  registerSendDocumentCommand,
+  registerGroupsCommand,
+  registerGroupCommand
 ]
 export function registerCommands(program : Command){
 

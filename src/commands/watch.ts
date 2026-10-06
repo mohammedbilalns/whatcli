@@ -8,6 +8,7 @@ import { openDatabase } from '../db/database.js';
 import { MessageStore } from '../services/message-store.js';
 import { logger } from '../utils/logger.js';
 import { registerHistorySync } from '../whatsapp/history.js';
+import { jidLabel } from '../whatsapp/jid.js';
 
 export function registerWatchCommand(program: Command): void {
   program
@@ -66,6 +67,22 @@ async function watch(): Promise<void> {
       }
       if(live) console.log(formatMessage(message))
     })
+
+sock.ev.on('group-participants.update', ({ id, participants, action }) => {
+  const who = participants
+    .map((p) => store.contactName(p.id) ?? jidLabel(p.id))
+    .join(', ');
+  log(`group ${jidLabel(id)}: ${who} — ${action}`);
+});
+
+sock.ev.on('groups.update', (updates) => {
+  for (const u of updates) {
+    if (u.id && u.subject) {
+      store.updateChatName(u.id, u.subject);
+      log(`group renamed: ${u.subject}`);
+    }
+  }
+});
 
     registerHistorySync(sock , (batch) => {
       const stored = store.ingestHistory(batch)
