@@ -13,7 +13,7 @@ export function registerRuleCommand(program: Command): void {
     .description('Add a rule. type: keyword|regex. Use -- for the prompt:')
     .option('-a, --action <action>', 'reply or react', 'reply')
     .option('-v, --value <value>', 'reply text or emoji')
-    .option('-c, --chat <chat>', "scope: '*', 'direct', or a chat name/JID", '*')
+    .option('-c, --chat <chat>', "scope: '*', 'all', 'direct', 'group', 'unknown', or a chat name/JID", '*')
     .action((type: string, triggerParts: string[], opts: { action: string; value?: string; chat: string }) => {
       const trigger = triggerParts.join(' ');
       if (!['keyword', 'regex'].includes(type)) { console.log('type must be keyword or regex'); process.exit(1); }
@@ -22,7 +22,7 @@ export function registerRuleCommand(program: Command): void {
 
       const db = openDatabase(loadConfig());
       let chat = opts.chat;
-      if (chat !== '*' && chat !== 'direct') {
+      if (chat !== '*' && chat !== 'all' && chat !== 'direct' && chat !== 'group' && chat !== 'unknown') {
         const r = resolveChat(db, chat);
         if (r.ok) chat = r.jid;              // store the JID, not the name — names drift, JIDs don't
         else { console.log(`Unknown chat "${chat}" — scope stays unresolvable`); db.close(); process.exit(1); }
@@ -42,8 +42,30 @@ export function registerRuleCommand(program: Command): void {
 
   rule.command('remove <id>')
     .description('Delete a rule')
-    .action((id: number) => { /* RuleStore.remove, print result, exit code */ });
+    .action((id: string) => {
+      const numId = parseInt(id, 10);
+      const db = openDatabase(loadConfig());
+      const ok = new RuleStore(db).remove(numId);
+      if (ok) console.log(`✅ Rule #${numId} removed`);
+      else console.log(`❌ Rule #${numId} not found`);
+      db.close();
+      process.exit(ok ? 0 : 1);
+    });
 
-  rule.command('on <id>').action((id: number) => { /* setEnabled(id, true) */ });
-  rule.command('off <id>').action((id: number) => { /* setEnabled(id, false) */ });
+  rule.command('on <id>').action((id: string) => {
+    const numId = parseInt(id, 10);
+    const db = openDatabase(loadConfig());
+    new RuleStore(db).setEnabled(numId, true);
+    console.log(`✅ Rule #${numId} enabled`);
+    db.close();
+    process.exit(0);
+  });
+  rule.command('off <id>').action((id: string) => {
+    const numId = parseInt(id, 10);
+    const db = openDatabase(loadConfig());
+    new RuleStore(db).setEnabled(numId, false);
+    console.log(`✅ Rule #${numId} disabled`);
+    db.close();
+    process.exit(0);
+  });
 }

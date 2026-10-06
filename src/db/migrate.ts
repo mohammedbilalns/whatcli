@@ -86,9 +86,10 @@ UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS 
     db.exec(`
       CREATE TABLE rules (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        trigger     TEXT NOT NULL,          -- keyword:hello  |  regex:^ping$         action      TEXT NOT NULL,          -- reply (more later: react)
-        value       TEXT NOT NULL,          -- the reply text / emoji
-        chat        TEXT NOT NULL DEFAULT '*',  -- JID, '*', or 'direct'
+        trigger     TEXT NOT NULL,
+        action      TEXT NOT NULL DEFAULT 'reply',
+        value       TEXT NOT NULL,
+        chat        TEXT NOT NULL DEFAULT '*',
         enabled     INTEGER NOT NULL DEFAULT 1,
         hit_count   INTEGER NOT NULL DEFAULT 0,
         last_fired  TEXT,
@@ -106,6 +107,16 @@ UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS 
         data TEXT NOT NULL
       );
     `);
+  },
+},
+{
+  name: '007_rules_action',
+  up: (db) => {
+    // For users who already ran 005_rules when it had a syntax error that hid the 'action' column inside a comment
+    const info = db.pragma('table_info(rules)') as any[];
+    if (!info.find((c) => c.name === 'action')) {
+      db.exec(`ALTER TABLE rules ADD COLUMN action TEXT NOT NULL DEFAULT 'reply'`);
+    }
   },
 },
 ]
