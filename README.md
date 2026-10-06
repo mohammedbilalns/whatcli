@@ -35,7 +35,6 @@ You can log in by scanning a QR code provided in the terminal:
 ```bash
 wacli login
 ```
-*Note: You can press `q` at any time to cancel the login process. Upon logging in, WhatCLI will automatically sync your initial contacts, chats, and messages.*
 
 ### Planned / Future Features
 - [ ] **Plugin System:** Integrate with npm packages to allow custom extensions, scripts, and deeper integrations.
