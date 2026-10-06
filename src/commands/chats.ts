@@ -26,23 +26,13 @@ export function chats(): Promise<void> {
       return; 
     }
 
-    const directs = rows.filter(r => r.type === 'direct');
-    const groups = rows.filter(r => r.type === 'group');
-
-    const formatRow = (row: any) => {
+    const tableData = rows.map(row => {
       const name = (row.name ?? jidLabel(row.jid)).slice(0, 24);
       const last = row.last_message_at ? timeAgo(new Date(row.last_message_at)) : '—';
-      return [String(row.id), row.type, name, last];
-    };
+      const typeStr = row.type === 'group' ? pc.magenta('group') : pc.cyan('direct');
+      return [String(row.id), typeStr, name, last];
+    });
 
-    if (directs.length > 0) {
-      console.log(pc.cyan('\n─── DIRECT CHATS ───'));
-      printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], directs.map(formatRow), { padding: true });
-    }
-    
-    if (groups.length > 0) {
-      console.log(pc.magenta('\n─── GROUP CHATS ───'));
-      printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], groups.map(formatRow), { padding: true });
-    }
+    printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], tableData, { padding: true });
   }, { syncHistory: true });
 }
