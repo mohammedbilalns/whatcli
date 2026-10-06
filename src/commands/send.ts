@@ -39,7 +39,7 @@ async function send(name: string, text: string): Promise<void> {
   }
 
   // 2. Session check — same rule as status.
-  const session = await loadSession(config);
+  const session = await loadSession(db);
   if (!session.hasSession) {
     console.log('Not logged in — run "wacli login" first.');
     db.close();

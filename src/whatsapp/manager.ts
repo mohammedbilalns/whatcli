@@ -1,7 +1,6 @@
 /**
  * Responsible for staring the connection , watch it , decide what to do when it dies and handle retries , inform the app about what is happening , reattach handlers on reconnection 
  */
-import { rmSync } from 'node:fs';
 import type { AuthenticationState, WASocket } from '@whiskeysockets/baileys';
 import { createSocket, awaitOpenOrClose, nextClose, type ConnectOptions } from './connect.js';
 import { decideReconnect, DEFAULT_POLICY, type ReconnectPolicy } from './reconnect.js';
@@ -43,8 +42,13 @@ export class WhatsAppManager {
   }
 
   // start the connection loop
-  async start(auth: AuthenticationState, saveCreds: () => Promise<void> | void, authDir: string): Promise<void> {
-    this.run = this.loop(auth, saveCreds, authDir);
+  async start(
+    auth: AuthenticationState,
+    saveCreds: () => Promise<void> | void,
+    clearCreds: () => void,
+    getMessage?: (key: import('@whiskeysockets/baileys').proto.IMessageKey) => Promise<import('@whiskeysockets/baileys').proto.IMessage | undefined>
+  ): Promise<void> {
+    this.run = this.loop(auth, saveCreds, clearCreds, getMessage);
     await this.run;
   }
 
@@ -59,7 +63,8 @@ export class WhatsAppManager {
   private async loop(
     auth: AuthenticationState,
     saveCreds: () => Promise<void> | void,
-    authDir: string,
+    clearCreds: () => void,
+    getMessage?: (key: import('@whiskeysockets/baileys').proto.IMessageKey) => Promise<import('@whiskeysockets/baileys').proto.IMessage | undefined>
   ): Promise<void> {
     const policy = this.options.policy ?? DEFAULT_POLICY;
     let attempt = 0;
@@ -67,7 +72,7 @@ export class WhatsAppManager {
     while (!this.stopping) {
       this.set(attempt === 0 ? 'connecting' : 'reconnecting');
 
-      const sock = createSocket(auth, saveCreds);
+      const sock = createSocket(auth, saveCreds, getMessage);
       this.currentSocket = sock;
       for (const handler of this.socketHandlers) handler(sock); // re-attach
 
@@ -105,7 +110,7 @@ export class WhatsAppManager {
         return;
       }
       if (decision.action === 'wipe-and-stop') {
-        rmSync(authDir, { recursive: true, force: true });
+        clearCreds();
         this.set('logged-out', decision.reason);
         return;
       }

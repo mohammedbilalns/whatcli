@@ -248,6 +248,23 @@ WHERE c.jid = ?
       .get(id) as MediaRow | undefined;
   }
 
+  getRawMessage(id: string): any | undefined {
+    const row = this.db
+      .prepare('SELECT type, text, media_json FROM messages WHERE id = ?')
+      .get(id) as { type: string; text: string | null; media_json: string | null } | undefined;
+    if (!row) return undefined;
+
+    if (row.media_json) {
+      return JSON.parse(row.media_json);
+    }
+    
+    if (row.type === 'text' && row.text) {
+      return { conversation: row.text };
+    }
+    
+    return undefined;
+  }
+
   updateMediaJson(id: string, mediaJson: string): void {
     this.db.prepare('UPDATE messages SET media_json = ? WHERE id = ?').run(mediaJson, id);
   }

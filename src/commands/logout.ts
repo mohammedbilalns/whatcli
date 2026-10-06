@@ -1,8 +1,10 @@
 import { rmSync } from 'node:fs';
 import type { Command } from 'commander';
-import { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
+import { DisconnectReason } from '@whiskeysockets/baileys';
 import { loadConfig } from '../utils/config.js';
 import { connectAndWait } from '../whatsapp/connect.js';
+import { openDatabase } from '../db/database.js';
+import { useSqliteAuthState } from '../whatsapp/auth.js';
 
 export function registerLogoutCommand(program: Command): void {
   program
@@ -13,7 +15,8 @@ export function registerLogoutCommand(program: Command): void {
 
 async function logout(): Promise<void> {
   const config = loadConfig();
-  const { state, saveCreds } = await useMultiFileAuthState(config.authDir);
+  const db = openDatabase(config);
+  const { state, saveCreds } = await useSqliteAuthState(db);
 
   const hasSession = state.creds.registered || !!state.creds.me?.id;
   if (!hasSession) {
@@ -40,7 +43,8 @@ async function logout(): Promise<void> {
     console.log('if this device still appears there.');
   }
 
-  rmSync(config.authDir, { recursive: true, force: true });
+  db.prepare('DELETE FROM auth_state').run();
+  db.close();
   console.log('\n Logged out. Local credentials deleted.');
   console.log('Run "wacli login" to connect again.');
   process.exit(0);

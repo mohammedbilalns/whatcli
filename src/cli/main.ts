@@ -4,6 +4,7 @@ import { Command} from "commander";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { logger, baileysLogger } from "../utils/logger.js";
 import { registerCommands } from "./commands.js";
 
 const pkgPath = path.join(
@@ -21,8 +22,27 @@ program
   .name('wacli')
   .description('Whatsapp in your terminal')
   .version(version)
+  .showSuggestionAfterError()
+  .option('-d, --debug', 'enable debug logging')
+  .hook('preAction', (thisCommand) => {
+    if (thisCommand.opts().debug) {
+      logger.level = 'debug';
+      baileysLogger.level = 'debug';
+    }
+  });
 
-registerCommands(program)
+registerCommands(program);
 
-
-await program.parseAsync(process.argv)
+try {
+  await program.parseAsync(process.argv);
+} catch (err) {
+  if (err instanceof Error) {
+    logger.error(err.message);
+    if (program.opts().debug) {
+      console.error(err.stack);
+    }
+  } else {
+    logger.error(String(err));
+  }
+  process.exit(1);
+}

@@ -4,6 +4,7 @@ import { openDatabase } from '../db/database.js';
 import { MessageStore } from '../services/message-store.js';
 import { jidLabel } from '../whatsapp/jid.js';
 import { timeAgo } from '../utils/time.js';
+import { printTable, printInfo } from '../utils/output.js';
 
 export function registerChatsCommand(program: Command): void {
   program
@@ -19,16 +20,16 @@ function chats(): void {
   db.close();
 
   if (rows.length === 0) {
-    console.log('No chats stored yet.');
-    console.log('Run "wacli watch" — history sync will populate the database.');
+    printInfo('No chats stored yet.');
+    printInfo('Run "wacli watch" — history sync will populate the database.');
     return; 
   }
 
-  console.log(`${'ID'.padEnd(5)}${'TYPE'.padEnd(7)}${'NAME'.padEnd(26)}LAST MESSAGE`);
-  console.log('─'.repeat(55));
-  for (const row of rows) {
+  const tableData = rows.map(row => {
     const name = (row.name ?? jidLabel(row.jid)).slice(0, 24);
     const last = row.last_message_at ? timeAgo(new Date(row.last_message_at)) : '—';
-    console.log(`${String(row.id).padEnd(5)}${row.type.padEnd(7)}${name.padEnd(26)}${last}`);
-  }
+    return [String(row.id), row.type, name, last];
+  });
+  
+  printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], tableData);
 }

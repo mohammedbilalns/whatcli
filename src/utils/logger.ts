@@ -8,6 +8,7 @@ export const logger = pino({
       colorize: true,
       translateTime: "yyyy-mm-dd HH:MM:ss",
       ignore: "pid,hostname",
+      destination: 2,
     }
   }
 })
@@ -17,6 +18,11 @@ export const baileysLogger = pino({
   level : process.env.WACLI_BAILEYS_LOG ?? 'warn',
   transport: {
     target: "pino-pretty",
-    options: {colorize: true, translateTime: "yyyy-mm-dd HH:MM:ss", ignore: "pid,hostname"}
+    options: {
+      colorize: true,
+      translateTime: "yyyy-mm-dd HH:MM:ss",
+      ignore: "pid,hostname",
+      destination: 2,
+    }
   }
 })
