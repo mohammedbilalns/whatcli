@@ -4,6 +4,7 @@ import { loadConfig } from "../utils/config.js";
 import { DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
+import { IpcClient } from "../ipc/client.js";
 
 export function registerStatusCommand(program: Command ): void {
   program
@@ -18,6 +19,7 @@ export function registerStatusCommand(program: Command ): void {
 async function status(): Promise<void>{
   const config = loadConfig()
   const {state, saveCreds}  = await useMultiFileAuthState(config.authDir)
+
 
   console.log('Whatsapp')
   console.log('--------------')
@@ -39,6 +41,13 @@ async function status(): Promise<void>{
     process.exit(1)
   }
 
+const ipc = new IpcClient(config.ipcPath);
+if (await ipc.alive()) {
+  console.log('Status: Connected (daemon)');   // daemon is up ⇒ socket is supervised
+  console.log(`Daemon: ${config.ipcPath}`);
+  // me/phone from session state as usual — no connection needed at all
+  process.exit(0);
+}
  /*
    * Try connecting to WhatsApp using the saved session.
    */

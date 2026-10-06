@@ -1,5 +1,6 @@
 import type { WAMessage, WASocket } from '@whiskeysockets/baileys';
 import type { Message } from '../models/message.js';
+import { GroupInfo } from '../models/groups.js';
 import { parseMessage } from './parser.js';
 import { isGroupChat } from './jid.js';
 import { downloadMediaMessage } from '@whiskeysockets/baileys';
@@ -8,6 +9,7 @@ import path from 'node:path';
 
 
 import { baileysLogger } from '../utils/logger.js';
+import { Sender } from './sender.js';
 
 export interface ReplyTarget {
   id: string;
@@ -20,7 +22,7 @@ export interface ReplyTarget {
  * takes app-level arguments, returns our Message model.
  * Phase 8 adds reply/react; Phase 9 adds media.
  */
-export class WhatsAppClient {
+export class WhatsAppClient implements Sender {
   constructor(private readonly sock: WASocket) {}
 
   async sendText(chatJid: string, text: string): Promise<Message> {
@@ -94,7 +96,7 @@ async sendDocument(chatJid: string, filePath: string): Promise<Message> {
   }
 
 
-async downloadMedia(raw: WAMessage): Promise<{ buffer: Buffer; mediaJson?: string }> {
+  async downloadMedia(raw: WAMessage): Promise<{ buffer: Buffer; mediaJson?: string }> {
   const buffer = await downloadMediaMessage(
     raw,
     'buffer',
@@ -106,6 +108,31 @@ async downloadMedia(raw: WAMessage): Promise<{ buffer: Buffer; mediaJson?: strin
   );
   return { buffer, mediaJson: JSON.stringify(raw.message) };
 }
+
+  async groupInfo(jid: string): Promise<GroupInfo> {
+    const meta = await this.sock.groupMetadata(jid);
+    return {
+      jid: meta.id,
+      name: meta.subject,
+      description: meta.desc,
+      createdAt: meta.creation,
+      announceOnly: meta.announce ?? false,
+      adminEditOnly: meta.restrict ?? false,
+      participants: meta.participants.map(p => ({
+        jid: p.id,
+        role: p.admin === 'superadmin' ? 'superadmin' : p.admin === 'admin' ? 'admin' : 'member',
+      }))
+    };
+  }
+
+  async lookupPhone(phone: string): Promise<{ jid: string; exists: boolean; lid?: string }[]> {
+    const res = await this.sock.onWhatsApp(phone);
+    return (res || []).map(r => ({
+      jid: r.jid,
+      exists: r.exists,
+      lid: 'lid' in r ? (r as any).lid : undefined
+    }));
+  }
 }
 
 

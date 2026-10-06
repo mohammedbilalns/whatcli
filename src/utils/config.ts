@@ -7,6 +7,7 @@ export interface Config {
   mediaDir: string;
   dbPath : string;
   logLevel : string;
+  ipcPath : string;
 }
 
 const projectRoot = path.resolve(
@@ -23,6 +24,7 @@ export function loadConfig(): Config {
     authDir: path.join(dataDir, "auth"),
     mediaDir: path.join(dataDir, "media"),
     dbPath: path.join(dataDir, "wacli.db"),
-    logLevel : process.env.WACLI_LOG_LEVEL ?? 'info'
+    logLevel : process.env.WACLI_LOG_LEVEL ?? 'info',
+    ipcPath: path.join(dataDir, "wacli.sock")
   }
 }
