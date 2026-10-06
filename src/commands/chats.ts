@@ -13,23 +13,24 @@ export function registerChatsCommand(program: Command): void {
     .action(() => chats());
 }
 
-function chats(): void {
-  const config = loadConfig();
-  const db = openDatabase(config);
-  const rows = new MessageStore(db).listChats();
-  db.close();
+import { withSocket } from './with-socket.js';
 
-  if (rows.length === 0) {
-    printInfo('No chats stored yet.');
-    printInfo('Run "wacli watch" — history sync will populate the database.');
-    return; 
-  }
+export function chats(): Promise<void> {
+  return withSocket(({ store }) => {
+    const rows = store.listChats();
 
-  const tableData = rows.map(row => {
-    const name = (row.name ?? jidLabel(row.jid)).slice(0, 24);
-    const last = row.last_message_at ? timeAgo(new Date(row.last_message_at)) : '—';
-    return [String(row.id), row.type, name, last];
-  });
-  
-  printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], tableData);
+    if (rows.length === 0) {
+      printInfo('No chats stored yet.');
+      printInfo('Run "wacli watch" — history sync will populate the database.');
+      return; 
+    }
+
+    const tableData = rows.map(row => {
+      const name = (row.name ?? jidLabel(row.jid)).slice(0, 24);
+      const last = row.last_message_at ? timeAgo(new Date(row.last_message_at)) : '—';
+      return [String(row.id), row.type, name, last];
+    });
+    
+    printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], tableData);
+  }, { syncHistory: true });
 }

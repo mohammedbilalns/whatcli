@@ -26,7 +26,8 @@ export function resolveOrThrow(db: Database, name: string): Extract<Resolution, 
 
 /** Connect, run fn with a ready service, always tear down cleanly. */
 export async function withSocket(
-  fn: (ctx: { sock?: WASocket; service: MessageService; store: MessageStore; db: Database; config: Config }) => Promise<void>,
+  fn: (ctx: { sock?: WASocket; service: MessageService; store: MessageStore; db: Database; config: Config }) => Promise<void> | void,
+  opts: { syncHistory?: boolean } = {}
 ): Promise<void> {
   const config = loadConfig();
   const db = openDatabase(config);
@@ -63,6 +64,13 @@ export async function withSocket(
 
   try {
     try {
+      if (opts.syncHistory) {
+        const ora = (await import('ora')).default;
+        const spinner = ora().start();
+        const { waitForHistorySync } = await import('../whatsapp/history.js');
+        await waitForHistorySync(sock, db, spinner);
+      }
+      
       const store = new MessageStore(db);
       const service = new MessageService(new WhatsAppClient(sock), store);
       await fn({ sock, service, store, db, config });

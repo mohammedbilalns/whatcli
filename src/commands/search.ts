@@ -12,43 +12,44 @@ export function registerSearchCommand(program: Command): void {
     .action(handleSearch);
 }
 
-function handleSearch(text: string): void {
-  const db = openDatabase(loadConfig());
-  const contacts = new ContactStore(db)
-  const rows = db
-    .prepare(`SELECT id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name
-                  FROM messages
-                  WHERE text LIKE ?
-                  ORDER BY timestamp DESC
-                  LIMIT 100`)
-    .all(`%${text}%`) as import('../services/message-store.js').MessageRow[];
+import { withSocket } from './with-socket.js';
 
-  if (rows.length === 0) {
-    console.log(`No stored messages matching "${text}".`);
-    db.close();
-    return;
-  }
+function handleSearch(text: string): Promise<void> {
+  return withSocket(({ db }) => {
+    const contacts = new ContactStore(db)
+    const rows = db
+      .prepare(`SELECT id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name
+                    FROM messages
+                    WHERE text LIKE ?
+                    ORDER BY timestamp DESC
+                    LIMIT 100`)
+      .all(`%${text}%`) as import('../services/message-store.js').MessageRow[];
 
-  const chatNames = new Map(
-    (db.prepare('SELECT jid, name FROM chats').all() as { jid: string; name: string | null }[])
-      .map((r) => [r.jid, r.name]),
-  );
+    if (rows.length === 0) {
+      console.log(`No stored messages matching "${text}".`);
+      return;
+    }
 
-  for (const row of rows) {
+    const chatNames = new Map(
+      (db.prepare('SELECT jid, name FROM chats').all() as { jid: string; name: string | null }[])
+        .map((r) => [r.jid, r.name]),
+    );
 
-    const chatLabel = contacts.chatName(row.chat_id) ?? jidLabel(row.chat_id); 
-    const msg = {
-      id: row.id,
-      chatId: row.chat_id,
-      senderId: row.sender_id,
-      fromMe: row.from_me === 1,
-      timestamp: new Date(row.timestamp),
-      type: row.type as import('../models/message.js').MessageType,
-      text: row.text ?? undefined,
-      replyToId: row.reply_to_id ?? undefined,
-      pushName: row.push_name ?? undefined,
-    };
+    for (const row of rows) {
+      const chatLabel = contacts.chatName(row.chat_id) ?? jidLabel(row.chat_id); 
+      const msg = {
+        id: row.id,
+        chatId: row.chat_id,
+        senderId: row.sender_id,
+        fromMe: row.from_me === 1,
+        timestamp: new Date(row.timestamp),
+        type: row.type as import('../models/message.js').MessageType,
+        text: row.text ?? undefined,
+        replyToId: row.reply_to_id ?? undefined,
+        pushName: row.push_name ?? undefined,
+      };
 
-    console.log(`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}`);   }
-  db.close();
+      console.log(`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}`);
+    }
+  }, { syncHistory: true });
 }
