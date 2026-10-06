@@ -24,6 +24,19 @@ async function login(): Promise<void> {
   const {state , saveCreds} = await useSqliteAuthState(db)
 
   const spinner = ora('Connecting to WhatsApp...').start();
+  
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (key) => {
+      if (key === 'q' || key === 'Q' || key === '\u0003') {
+        spinner.stop();
+        console.log('\nExiting...');
+        process.exit(0);
+      }
+    });
+  }
 
   const {sock , outcome} = await connectAndWait(state,saveCreds, {
     timeoutMs :120_000,
@@ -32,7 +45,7 @@ async function login(): Promise<void> {
       console.clear();
       printInfo('Open WhatsApp -> Settings -> Linked Devices, then scan:\n');
       qrcode.generate(qr, {small: true});
-      spinner.start('Waiting for scan...');
+      spinner.start('Waiting for scan... (Press "q" to cancel)');
     }
   })
 
