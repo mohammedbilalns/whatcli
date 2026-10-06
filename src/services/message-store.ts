@@ -74,10 +74,10 @@ ON CONFLICT(jid) DO UPDATE SET name = COALESCE(chats.name, excluded.name)
     /** 
      *insert message if it is not already there else ignore  
      * */
-this.stmtInsertMessage = db.prepare(`
-  INSERT OR IGNORE INTO messages
-  (id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name, media_json)
-  VALUES (@id, @chat_id, @sender_id, @from_me, @type, @text, @reply_to_id, @timestamp, @push_name, @media_json)
+    this.stmtInsertMessage = db.prepare(`
+INSERT OR IGNORE INTO messages
+(id, chat_id, sender_id, from_me, type, text, reply_to_id, timestamp, push_name, media_json)
+VALUES (@id, @chat_id, @sender_id, @from_me, @type, @text, @reply_to_id, @timestamp, @push_name, @media_json)
 `);
 
     /** 
@@ -216,25 +216,47 @@ WHERE c.jid = ?
     return row?.own ?? row?.contact ?? row?.sibling ?? row?.sibling_contact ?? null;
   }
 
-upsertContact(jid: string, name: string): void {
-  this.stmtUpsertContact.run(jid, name);
-}
+  upsertContact(jid: string, name: string): void {
+    this.stmtUpsertContact.run(jid, name);
+  }
 
-/** Look up a stored message by ID — the reply/react target. */
-getMessageById(id: string): { id: string; chat_id: string; sender_id: string; from_me: number; text: string | null } | undefined {
-  return this.db
-    .prepare('SELECT id, chat_id, sender_id, from_me, text FROM messages WHERE id = ?')
-    .get(id) as { id: string; chat_id: string; sender_id: string; from_me: number; text: string | null } | undefined;
-}
+  /** Look up a stored message by ID — the reply/react target. */
+  getMessageById(id: string): { id: string; chat_id: string; sender_id: string; from_me: number; text: string | null } | undefined {
+    return this.db
+      .prepare('SELECT id, chat_id, sender_id, from_me, text FROM messages WHERE id = ?')
+      .get(id) as { id: string; chat_id: string; sender_id: string; from_me: number; text: string | null } | undefined;
+  }
 
-getMediaById(id: string): MediaRow | undefined {
-  return this.db
-    .prepare('SELECT id, chat_id, from_me, type, media_json FROM messages WHERE id = ?')
-    .get(id) as MediaRow | undefined;
-}
+  getMediaById(id: string): MediaRow | undefined {
+    return this.db
+      .prepare('SELECT id, chat_id, from_me, type, media_json FROM messages WHERE id = ?')
+      .get(id) as MediaRow | undefined;
+  }
 
-updateMediaJson(id: string, mediaJson: string): void {
-  this.db.prepare('UPDATE messages SET media_json = ? WHERE id = ?').run(mediaJson, id);
-}
+  updateMediaJson(id: string, mediaJson: string): void {
+    this.db.prepare('UPDATE messages SET media_json = ? WHERE id = ?').run(mediaJson, id);
+  }
+
+
+  /** Stored groups only. */
+  listGroups(): ChatRow[] {
+    return this.db
+      .prepare(`SELECT rowid AS id, jid, name, type, last_message_at FROM chats
+WHERE type = 'group' ORDER BY last_message_at DESC`)
+      .all() as ChatRow[];
+  }
+
+  /** Best-known name for a person JID (LID or phone). */
+  contactName(jid: string): string | null {
+    const row = this.db
+      .prepare('SELECT name FROM contacts WHERE jid = ? AND name IS NOT NULL')
+      .get(jid) as { name: string } | undefined;
+    return row?.name ?? null;
+  }
+
+  /** Keep the stored chat name fresh . */
+  updateChatName(jid: string, name: string): void {
+    this.db.prepare('UPDATE chats SET name = ? WHERE jid = ?').run(name, jid);
+  }
 
 }
