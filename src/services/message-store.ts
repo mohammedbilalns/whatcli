@@ -7,6 +7,7 @@ import { Message } from "../models/message.js";
 import { HistoryBatch } from "../whatsapp/history.js";
 import { isJidGroup } from "@whiskeysockets/baileys";
 import { isGroupChat } from "../whatsapp/jid.js";
+import { ContactStore } from "./contact-store.js";
 
 export interface ChatRow {
   id: number;
@@ -44,7 +45,12 @@ export class MessageStore {
   // Run history message ingestion as a transaction 
   private readonly txIngest;       
 
+  private readonly contacts: ContactStore;                          // ← new
+
   constructor(private readonly db : Database){
+
+    this.contacts = new ContactStore(db);
+
 
 
     /** 
@@ -94,7 +100,16 @@ updated_at = datetime('now')
     this.txSave = this.db.transaction((msg: Message) => {
       this.#chatFromMessage(msg);
       this.stmtInsertMessage.run(this.#row(msg));
-      if (!msg.fromMe && msg.pushName) this.stmtUpsertContact.run(msg.senderId, msg.pushName);
+
+      // Learn LID<->phone pairs from traffic.
+      if (!msg.fromMe && msg.senderAltId) {
+        
+        this.contacts.syncLink(
+          msg.senderId.endsWith('@lid') ? msg.senderId : msg.senderAltId,
+          msg.senderId.endsWith('@lid') ? msg.senderAltId : msg.senderId,
+        );
+      }
+
     });
 
     this.txIngest = this.db.transaction((batch: HistoryBatch): number => {

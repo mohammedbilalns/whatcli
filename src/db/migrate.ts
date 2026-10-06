@@ -54,8 +54,32 @@ updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   name: '003_messages_media_json',
   up: (db) => {
     db.exec('ALTER TABLE messages ADD COLUMN media_json TEXT;');
+    },
   },
-},
+  {
+    name: '004_contacts_identity',
+    up: (db) => {
+      db.exec(`
+ALTER TABLE contacts ADD COLUMN phone TEXT;
+ALTER TABLE contacts ADD COLUMN push_name TEXT;
+ALTER TABLE contacts ADD COLUMN alias TEXT;
+
+CREATE TABLE contact_links (
+lid   TEXT NOT NULL,
+phone TEXT NOT NULL,   -- full phone JID
+PRIMARY KEY (lid, phone)
+);
+
+-- backfill pairs from the bridges Phase 9 built
+INSERT OR IGNORE INTO contact_links (lid, phone)
+SELECT jid, alt_jid FROM chats
+WHERE jid LIKE '%@lid' AND alt_jid IS NOT NULL;
+
+-- phone JID contacts get a normalized phone column
+UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS NULL;
+`);
+    },
+  },
 ]
 
 

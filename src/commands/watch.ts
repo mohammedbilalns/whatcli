@@ -9,6 +9,7 @@ import { MessageStore } from '../services/message-store.js';
 import { logger } from '../utils/logger.js';
 import { registerHistorySync } from '../whatsapp/history.js';
 import { jidLabel } from '../whatsapp/jid.js';
+import { ContactStore } from '../services/contact-store.js';
 
 export function registerWatchCommand(program: Command): void {
   program
@@ -48,15 +49,12 @@ async function watch(): Promise<void> {
 
   const db = openDatabase(config)
   const store = new MessageStore(db)
+  const contacts = new ContactStore(db);     
   let ingested = 0 
   log(`storing to ${config.dbPath}`)
   // fires on EVERY socket, including post-reconnect ones.
   manager.onSocket((sock) => {
-    type EmitFn = (event: string, ...args: unknown[]) => boolean;
-    const originalEmit = sock.ev.emit.bind(sock.ev) as EmitFn;
-    sock.ev.emit = ((event: string, ...args: unknown[]) => {
-      return originalEmit(event, ...args);
-    }) as unknown as typeof sock.ev.emit;
+   
     registerMessageListener(sock, (message, {live}) =>{
       try {
         store.saveMessage(message)
@@ -65,15 +63,22 @@ async function watch(): Promise<void> {
         logger.error({err}, 'failed to store message')
 
       }
-      if(live) console.log(formatMessage(message))
+
+      if (live) console.log(formatMessage(message, (j) => contacts.displayName(j))); // ← resolver
     })
 
-sock.ev.on('group-participants.update', ({ id, participants, action }) => {
-  const who = participants
-    .map((p) => store.contactName(p.id) ?? jidLabel(p.id))
-    .join(', ');
-  log(`group ${jidLabel(id)}: ${who} — ${action}`);
-});
+    sock.ev.on('contacts.update', (updates) => {
+      for (const u of updates) {
+        if (u.id && u.notify) contacts.upsertName(u.id, u.notify);
+      }
+    });
+
+    sock.ev.on('group-participants.update', ({ id, participants, action }) => {
+      const who = participants
+        .map((p) => contacts.jidDisplayName(p.id))   // ← was store.contactName ?? jidLabel
+        .join(', ');
+      log(`group ${jidLabel(id)}: ${who} — ${action}`);
+    });
 
 sock.ev.on('groups.update', (updates) => {
   for (const u of updates) {
