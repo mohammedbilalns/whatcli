@@ -5,6 +5,7 @@ import { MessageStore } from '../services/message-store.js';
 import { resolveChat } from '../whatsapp/jid.js';
 import { formatMessage } from '../utils/format.js';
 import { ContactStore } from '../services/contact-store.js';
+import { printInfo, printData, printError } from '../utils/output.js';
 
 export function registerHistoryCommand(program: Command): void {
   program
@@ -23,11 +24,11 @@ async function history(name: string, opts: { limit: string ; ids?: boolean }): P
   const resolved = resolveChat(db, name);
   if (!resolved.ok) {
     if (resolved.error === 'not-found') {
-      console.log(`No chat matching "${name}" found.`);
-      console.log('Run "wacli chats" to list stored chats.');
+      printError(`No chat matching "${name}" found.`);
+      printError('Run "wacli chats" to list stored chats.');
     } else {
-      console.log(`"${name}" matches several chats — be more specific:`);
-      for (const c of resolved.candidates) console.log(`  ${c.label}   (${c.jid})`);
+      printError(`"${name}" matches several chats — be more specific:`);
+      for (const c of resolved.candidates) printError(`  ${c.label}   (${c.jid})`);
     }
     db.close();
     process.exit(1);
@@ -38,15 +39,16 @@ async function history(name: string, opts: { limit: string ; ids?: boolean }): P
   const messages = store.listMessages(resolved.jid, limit);
   db.close();
 
-  console.log(resolved.label);
+  printInfo(resolved.label);
   const resolveName = (jid: string) => contacts.displayName(jid)
-  console.log('─'.repeat(50));
+  printInfo('─'.repeat(50));
   if (messages.length === 0) {
-    console.log('No stored messages for this chat.');
-    console.log('(Only messages seen while watching, plus history sync, are stored.)');
+    printInfo('No stored messages for this chat.');
+    printInfo('(Only messages seen while watching, plus history sync, are stored.)');
     return;
   }
 
-  for (const m of messages)                                        // ④ use it
-    console.log(opts.ids ? `${m.id}  ${formatMessage(m, resolveName)}` : formatMessage(m, resolveName));
+  for (const m of messages) {
+    printData(opts.ids ? `${m.id}\t${formatMessage(m, resolveName)}` : formatMessage(m, resolveName));
+  }
 }
