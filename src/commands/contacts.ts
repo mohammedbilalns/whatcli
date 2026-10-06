@@ -11,22 +11,20 @@ export function registerContactsCommand(program: Command): void {
     .action((query?: string) => contactsList(query));
 }
 
-import { withSocket } from './with-socket.js';
-
-function contactsList(query?: string): Promise<void> {
-  return withSocket(({ db }) => {
-    const rows = new ContactStore(db).list(query);
-    
-    if (rows.length === 0) {
-      printInfo(query ? `No contacts matching "${query}".` : 'No named contacts yet.');
-      return;
-    }
-    
-    const tableData = rows.map(r => {
-      const name = (r.alias ?? r.name ?? '').slice(0, 26);
-      return [name, r.phone ?? r.jid];
-    });
-    
-    printTable(['NAME', 'IDENTIFIER'], tableData);
-  }, { syncHistory: true });
+function contactsList(query?: string): void {
+  const db = openDatabase(loadConfig());
+  const rows = new ContactStore(db).list(query);
+  db.close();
+  
+  if (rows.length === 0) {
+    printInfo(query ? `No contacts matching "${query}".` : 'No named contacts yet.');
+    return;
+  }
+  
+  const tableData = rows.map(r => {
+    const name = (r.alias ?? r.name ?? '').slice(0, 26);
+    return [name, r.phone ?? r.jid];
+  });
+  
+  printTable(['NAME', 'IDENTIFIER'], tableData);
 }

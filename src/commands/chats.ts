@@ -14,25 +14,26 @@ export function registerChatsCommand(program: Command): void {
 }
 
 import pc from 'picocolors';
-import { withSocket } from './with-socket.js';
+export async function chats(): Promise<void> {
+  const config = loadConfig();
+  const db = openDatabase(config);
+  const store = new MessageStore(db);
+  const rows = store.listChats();
 
-export function chats(): Promise<void> {
-  return withSocket(({ store }) => {
-    const rows = store.listChats();
+  if (rows.length === 0) {
+    printInfo('No chats stored yet.');
+    printInfo('Run "wacli daemon" — history sync will populate the database.');
+    db.close();
+    return; 
+  }
 
-    if (rows.length === 0) {
-      printInfo('No chats stored yet.');
-      printInfo('Run "wacli daemon" — history sync will populate the database.');
-      return; 
-    }
+  const tableData = rows.map(row => {
+    const name = (row.name ?? jidLabel(row.jid)).slice(0, 24);
+    const last = row.last_message_at ? timeAgo(new Date(row.last_message_at)) : '—';
+    const typeStr = row.type === 'group' ? pc.magenta('group') : pc.cyan('direct');
+    return [String(row.id), typeStr, name, last];
+  });
 
-    const tableData = rows.map(row => {
-      const name = (row.name ?? jidLabel(row.jid)).slice(0, 24);
-      const last = row.last_message_at ? timeAgo(new Date(row.last_message_at)) : '—';
-      const typeStr = row.type === 'group' ? pc.magenta('group') : pc.cyan('direct');
-      return [String(row.id), typeStr, name, last];
-    });
-
-    printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], tableData, { padding: true });
-  }, { syncHistory: true });
+  printTable(['ID', 'TYPE', 'NAME', 'LAST MESSAGE'], tableData, { padding: true });
+  db.close();
 }
