@@ -6,6 +6,8 @@ import { openDatabase } from "../db/database.js";
 import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
+import ora from 'ora';
+import { printInfo, printSuccess, printError } from '../utils/output.js';
 
 
 export function registerLoginCommand(program : Command): void {
@@ -16,100 +18,48 @@ export function registerLoginCommand(program : Command): void {
     .action(() => login()) 
 }
 
-/**
- * Handles the WhatsApp login process.
- */
 async function login(): Promise<void> {
   const config = loadConfig()
-
-  /*
-   * Load the WhatsApp authentication state from disk.
-   *
-   * `state` contains the credentials and cryptographic
-   * keys required by Baileys to authenticate.
-   *
-   * `saveCreds` is a function that persists updated
-   * credentials back to the auth directory.
-   *
-   * If this is the first login, the directory may not
-   * contain an authenticated session yet.
-   */
   const db = openDatabase(config);
   const {state , saveCreds} = await useSqliteAuthState(db)
 
-  console.log('Connecting to whatsapp...')
+  const spinner = ora('Connecting to WhatsApp...').start();
 
-  /*
-   * Create the WhatsApp connection and wait for one of:
-   *
-   *   - successful connection
-   *   - connection failure
-   *   - timeout
-   *
-   * `onQr` is called whenever Baileys generates a QR code.
-   */
   const {sock , outcome} = await connectAndWait(state,saveCreds, {
     timeoutMs :120_000,
     onQr: (qr) =>{
+      spinner.stop();
       console.clear();
-      console.log('Open Whatsapp -> Settings -> Linked Devices,then scan:\n')
-      // Converts the QR string into a terminal-friendly QR code.
-      qrcode.generate(qr, {small: true})
+      printInfo('Open WhatsApp -> Settings -> Linked Devices, then scan:\n');
+      qrcode.generate(qr, {small: true});
+      spinner.start('Waiting for scan...');
     }
   })
 
-  /*
-   * ─────────────────────────────────────────────
-   * CONNECTION SUCCESSFUL
-   * ─────────────────────────────────────────────
-   */
   if(outcome.status === "connected"){
-    /*
-     * Save the final authentication credentials.
-     *
-     * Baileys may have updated the credentials during
-     * the connection process, so this ensures the latest
-     * state is persisted to disk.
-     */
-    await saveCreds() 
-    const me = state.creds.me
-    const phone = me?.id ? phoneFromJid(me.id) : 'unknown'
-    console.log('\n Connected')
-    console.log(`Logged in as: ${phone}${me?.name ? `(${me.name})` : ''  }`)
-    console.log(`Credentials: ${config.authDir}`)
-
-    /*
-
-     * Close the connection before exiting the CLI.
-     */
-    await sock.end(undefined)
-    process.exit(0)
+    spinner.succeed('Connected');
+    await saveCreds(); 
+    const me = state.creds.me;
+    const phone = me?.id ? phoneFromJid(me.id) : 'unknown';
+    printSuccess(`Logged in as: ${phone} ${me?.name ? `(${me.name})` : ''}`);
+    
+    await sock.end(undefined);
+    process.exit(0);
   }
-
 
   if(outcome.status === 'timeout'){
-    console.log(`\n Timed out waiting for the scan, Run wacli login aain.`)
-    process.exit(1)
+    spinner.fail('Timed out waiting for scan. Run "wacli login" again.');
+    process.exit(1);
   }
 
-  /*
-   * ─────────────────────────────────────────────
-   * CONNECTION CLOSED / FAILED
-   * ─────────────────────────────────────────────
-   * Check whether WhatsApp explicitly logged out
-   * this session.
-   *
-   * In that case, the saved authentication state
-   * can no longer be used.
-   */
   if(outcome.code === DisconnectReason.loggedOut){
-    console.log('\nSaved session is invalid — wiping it and starting a fresh login.');
+    spinner.warn('Saved session is invalid — wiping it and starting a fresh login.');
     db.prepare('DELETE FROM auth_state').run();
     db.close();
-    return login(); // empty auth dir now → fresh state → QR code
-  }else {
-    console.log(`\n Connection closed (code ${outcome.code}): ${outcome.error?.message ?? 'unknow'}`)
+    return login();
+  } else {
+    spinner.fail(`Connection closed (code ${outcome.code}): ${outcome.error?.message ?? 'unknown'}`);
   } 
 
-  process.exit(1)
+  process.exit(1);
 }
