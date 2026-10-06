@@ -18,6 +18,9 @@ import { registerGroupsCommand } from "../commands/groups.js";
 import { registerContactCommand } from "../commands/contact.js";
 import { registerContactsCommand } from "../commands/contacts.js";
 
+import { registerRuleCommand } from "../commands/rule.js";
+import { registerRulesCommand } from "../commands/rules.js";
+
 // commands registry 
 const commands = [
   registerLoginCommand, 
@@ -37,7 +40,9 @@ const commands = [
   registerGroupsCommand,
   registerGroupCommand,
   registerContactsCommand,
-  registerContactCommand
+  registerContactCommand,
+  registerRuleCommand,
+  registerRulesCommand
 ]
 export function registerCommands(program : Command){
 
