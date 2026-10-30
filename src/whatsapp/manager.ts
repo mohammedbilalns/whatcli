@@ -13,6 +13,7 @@ import {
 	decideReconnect,
 	type ReconnectPolicy,
 } from "./reconnect.js";
+import { getLatestVersion } from "./socket.js";
 
 /**
  * State indicating the live status of the connection
@@ -41,8 +42,18 @@ export class WhatsAppManager {
 	private run?: Promise<void>;
 	//
 	private wake?: () => void;
+	private currentState: ManagerState = "connecting";
+	private currentDetail?: string;
 
 	constructor(private readonly options: ManagerOptions = {}) {}
+
+	get state(): ManagerState {
+		return this.currentState;
+	}
+
+	get detail(): string | undefined {
+		return this.currentDetail;
+	}
 
 	/** Register a handler that re-attaches to every new socket on reconnect. */
 	onSocket(handler: (sock: WASocket) => void): void {
@@ -82,11 +93,12 @@ export class WhatsAppManager {
 	): Promise<void> {
 		const policy = this.options.policy ?? DEFAULT_POLICY;
 		let attempt = 0;
+		const version = await getLatestVersion();
 
 		while (!this.stopping) {
 			this.set(attempt === 0 ? "connecting" : "reconnecting");
 
-			const sock = createSocket(auth, saveCreds, getMessage);
+			const sock = createSocket(auth, saveCreds, getMessage, version);
 			this.currentSocket = sock;
 			for (const handler of this.socketHandlers) handler(sock); // re-attach
 
@@ -157,6 +169,8 @@ export class WhatsAppManager {
 	}
 
 	private set(state: ManagerState, detail?: string): void {
+		this.currentState = state;
+		this.currentDetail = detail;
 		this.options.onStateChange?.(state, detail);
 	}
 }

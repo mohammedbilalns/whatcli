@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import process from "node:process";
 import { DisconnectReason } from "@whiskeysockets/baileys";
 import type { Command } from "commander";
@@ -8,6 +9,14 @@ import { printData, printError, printJson } from "../utils/output.js";
 import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { phoneFromJid } from "../whatsapp/jid.js";
+
+interface DaemonPingResult {
+	state?: string;
+	connectionState?: string;
+	connectionDetail?: string;
+	ingested?: number;
+	uptime?: number;
+}
 
 interface StatusOptions {
 	quiet?: boolean;
@@ -64,24 +73,52 @@ async function status(opts: StatusOptions): Promise<void> {
 		const ipc = new IpcClient(config.ipcPath);
 		if (await ipc.alive()) {
 			closeDb();
-			if (opts.quiet) process.exit(0);
+			let daemonPing: DaemonPingResult | null = null;
+			try {
+				daemonPing = (await ipc.request("ping", {}, 5000)) as DaemonPingResult;
+			} catch {}
+
+			const isConnected = daemonPing?.connectionState === "connected";
+			const me = state.creds.me;
+
+			let pid: number | null = null;
+			if (existsSync(config.pidPath)) {
+				try {
+					pid = Number(readFileSync(config.pidPath, "utf8").trim());
+				} catch {}
+			}
+
+			if (opts.quiet) {
+				process.exit(isConnected ? 0 : 1);
+			}
+
 			if (opts.json) {
-				const me = state.creds.me;
 				printJson({
-					connected: true,
-					status: "connected",
+					connected: isConnected,
+					status: daemonPing?.connectionState ?? "connected",
+					detail: daemonPing?.connectionDetail ?? null,
 					daemon: true,
+					pid,
+					uptime: daemonPing?.uptime ?? null,
 					ipcPath: config.ipcPath,
 					user: me?.id ? phoneFromJid(me.id) : null,
+					ingested: daemonPing?.ingested ?? 0,
 				});
-				process.exit(0);
+				process.exit(isConnected ? 0 : 1);
 			}
+
 			if (process.stdout.isTTY) {
 				printData("Whatsapp\n--------------");
 			}
-			printData("Status: Connected (daemon)");
-			printData(`Daemon: ${config.ipcPath}`);
-			process.exit(0);
+			const statusLabel = daemonPing?.connectionState
+				? `${daemonPing.connectionState}${daemonPing.connectionDetail ? ` (${daemonPing.connectionDetail})` : ""}`
+				: "connected";
+			printData(`Status: ${statusLabel} (daemon)`);
+			printData(`User: ${me?.id ? phoneFromJid(me.id) : "unknown"}`);
+			printData(
+				`Daemon: ${config.ipcPath}${pid ? ` (PID ${pid})` : ""}${daemonPing?.uptime ? ` [up ${daemonPing.uptime}s]` : ""}`,
+			);
+			process.exit(isConnected ? 0 : 1);
 		}
 
 		/*

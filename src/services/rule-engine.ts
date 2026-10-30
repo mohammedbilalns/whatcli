@@ -11,15 +11,19 @@ const CACHE = new Map<string, RegExp>();
 
 export class RuleEngine {
 	constructor(
-		private readonly rules: Rule[],
+		private readonly rules: Rule[] | (() => Rule[]),
 		private readonly isContactSaved?: (jid: string) => boolean,
 	) {}
+
+	private get currentRules(): Rule[] {
+		return typeof this.rules === "function" ? this.rules() : this.rules;
+	}
 
 	match(msg: Message): RuleHit | null {
 		if (msg.fromMe) return null; // never react to ourselves (feedback loops!)
 		if (msg.type !== "text" || !msg.text) return null; // rules fire on text only, for now
 
-		for (const rule of this.rules) {
+		for (const rule of this.currentRules) {
 			if (!this.#inScope(rule, msg.chatId)) continue;
 
 			const matched =

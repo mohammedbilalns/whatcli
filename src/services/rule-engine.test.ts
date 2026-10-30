@@ -56,4 +56,19 @@ describe("RuleEngine", () => {
 	it("skips non-text messages", () => {
 		expect(new RuleEngine([rule()]).match(msg({ type: "image" }))).toBeNull();
 	});
+
+	it("dynamically queries rules when a getter function is provided", () => {
+		let currentRules = [rule({ triggerValue: "hello" })];
+		const engine = new RuleEngine(() => currentRules);
+
+		expect(engine.match(msg({ text: "hello" }))).not.toBeNull();
+		expect(engine.match(msg({ text: "bye" }))).toBeNull();
+
+		// Dynamically add a new rule without re-creating engine
+		currentRules = [
+			rule({ triggerValue: "hello" }),
+			rule({ id: 2, triggerValue: "bye" }),
+		];
+		expect(engine.match(msg({ text: "bye" }))).not.toBeNull();
+	});
 });

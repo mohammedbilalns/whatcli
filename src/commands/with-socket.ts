@@ -67,10 +67,12 @@ export async function withSocket(
 		process.exit(1);
 	}
 
+	const store = new MessageStore(db);
 	const { sock, outcome } = await connectAndWait(
 		session.state,
 		session.saveCreds,
 		{ timeoutMs: 30_000 },
+		async (key) => store.getRawMessage(key.id as string),
 	);
 	if (outcome.status !== "connected") {
 		const why =
@@ -89,7 +91,6 @@ export async function withSocket(
 				await waitForHistorySync(sock, db, spinner);
 			}
 
-			const store = new MessageStore(db);
 			const service = new MessageService(new WhatsAppClient(sock), store);
 			await fn({ sock, service, store, db, config });
 		} finally {

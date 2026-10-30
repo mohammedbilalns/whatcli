@@ -1,3 +1,4 @@
+import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import type { Command } from "commander";
 import { openDatabase } from "../db/database.js";
 import { IpcServer } from "../ipc/server.js";
@@ -16,6 +17,7 @@ import { WhatsAppClient } from "../whatsapp/client.js";
 import { registerHistorySync } from "../whatsapp/history.js";
 import { type ManagerState, WhatsAppManager } from "../whatsapp/manager.js";
 import { registerMessageListener } from "../whatsapp/messages.js";
+import { DAEMON_POLICY } from "../whatsapp/reconnect.js";
 
 export function registerDaemonCommand(program: Command): void {
 	program
@@ -49,6 +51,7 @@ async function daemon(verbose: boolean): Promise<void> {
 	let service: MessageService | undefined;
 
 	const manager = new WhatsAppManager({
+		policy: DAEMON_POLICY,
 		onQr: () =>
 			log("server asked for a QR — session may be dead; re-login required"),
 		onStateChange: (s: ManagerState, detail?: string) =>
@@ -59,7 +62,7 @@ async function daemon(verbose: boolean): Promise<void> {
 		service = new MessageService(new WhatsAppClient(sock), store);
 		const automation = new Automation(
 			new RuleEngine(
-				ruleStore.activeRules(),
+				() => ruleStore.activeRules(),
 				(jid) => contacts.displayName(jid) !== null,
 			),
 			ruleStore,
@@ -88,6 +91,21 @@ async function daemon(verbose: boolean): Promise<void> {
 			const stored = store.ingestHistory(batch);
 			ingested += stored;
 			log(`history sync: ${stored} messages, ${batch.chats.length} chats`);
+		});
+
+		sock.ev.on("messages.update", (updates) => {
+			for (const { key, update } of updates) {
+				if (!key.id) continue;
+				const newText =
+					update.message?.conversation ||
+					update.message?.extendedTextMessage?.text;
+				if (newText) {
+					const updated = store.updateMessageText(key.id, newText);
+					if (updated && verbose) {
+						log(`message edited: ${key.id}`);
+					}
+				}
+			}
 		});
 
 		sock.ev.on("contacts.upsert", (contacts_arr) => {
@@ -123,7 +141,13 @@ async function daemon(verbose: boolean): Promise<void> {
 			const params = p as Record<string, never>; // narrow per-method below
 			switch (method) {
 				case "ping":
-					return { state: "up", ingested };
+					return {
+						state: "up",
+						connectionState: manager.state,
+						connectionDetail: manager.detail,
+						ingested,
+						uptime: Math.round(process.uptime()),
+					};
 				case "send.text":
 					return service?.sendText(params.jid, params.text);
 				case "send.reply":
@@ -165,6 +189,11 @@ async function daemon(verbose: boolean): Promise<void> {
 
 	async function graceful(): Promise<void> {
 		log(`shutting down (${ingested} messages this session)`);
+		if (existsSync(config.pidPath)) {
+			try {
+				unlinkSync(config.pidPath);
+			} catch {}
+		}
 		await ipc.stop();
 		await manager.stop();
 		await saveCreds();
@@ -174,6 +203,7 @@ async function daemon(verbose: boolean): Promise<void> {
 	process.on("SIGINT", () => void graceful());
 	process.on("SIGTERM", () => void graceful());
 
+	writeFileSync(config.pidPath, String(process.pid));
 	await ipc.start();
 	await manager.start(
 		state,
