@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import process from "node:process";
 import { DisconnectReason } from "@whiskeysockets/baileys";
 import type { Command } from "commander";
@@ -80,6 +81,13 @@ async function status(opts: StatusOptions): Promise<void> {
 			const isConnected = daemonPing?.connectionState === "connected";
 			const me = state.creds.me;
 
+			let pid: number | null = null;
+			if (existsSync(config.pidPath)) {
+				try {
+					pid = Number(readFileSync(config.pidPath, "utf8").trim());
+				} catch {}
+			}
+
 			if (opts.quiet) {
 				process.exit(isConnected ? 0 : 1);
 			}
@@ -90,6 +98,8 @@ async function status(opts: StatusOptions): Promise<void> {
 					status: daemonPing?.connectionState ?? "connected",
 					detail: daemonPing?.connectionDetail ?? null,
 					daemon: true,
+					pid,
+					uptime: daemonPing?.uptime ?? null,
 					ipcPath: config.ipcPath,
 					user: me?.id ? phoneFromJid(me.id) : null,
 					ingested: daemonPing?.ingested ?? 0,
@@ -105,7 +115,9 @@ async function status(opts: StatusOptions): Promise<void> {
 				: "connected";
 			printData(`Status: ${statusLabel} (daemon)`);
 			printData(`User: ${me?.id ? phoneFromJid(me.id) : "unknown"}`);
-			printData(`Daemon: ${config.ipcPath}`);
+			printData(
+				`Daemon: ${config.ipcPath}${pid ? ` (PID ${pid})` : ""}${daemonPing?.uptime ? ` [up ${daemonPing.uptime}s]` : ""}`,
+			);
 			process.exit(isConnected ? 0 : 1);
 		}
 

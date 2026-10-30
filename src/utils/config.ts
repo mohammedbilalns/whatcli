@@ -8,6 +8,7 @@ export interface Config {
 	dbPath: string;
 	logLevel: string;
 	ipcPath: string;
+	pidPath: string;
 }
 
 const projectRoot = path.resolve(
@@ -26,5 +27,6 @@ export function loadConfig(): Config {
 		dbPath: path.join(dataDir, "wacli.db"),
 		logLevel: process.env.WACLI_LOG_LEVEL ?? "info",
 		ipcPath: path.join(dataDir, "wacli.sock"),
+		pidPath: path.join(dataDir, "wacli.pid"),
 	};
 }

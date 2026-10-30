@@ -1,3 +1,4 @@
+import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import type { Command } from "commander";
 import { openDatabase } from "../db/database.js";
 import { IpcServer } from "../ipc/server.js";
@@ -188,6 +189,11 @@ async function daemon(verbose: boolean): Promise<void> {
 
 	async function graceful(): Promise<void> {
 		log(`shutting down (${ingested} messages this session)`);
+		if (existsSync(config.pidPath)) {
+			try {
+				unlinkSync(config.pidPath);
+			} catch {}
+		}
 		await ipc.stop();
 		await manager.stop();
 		await saveCreds();
@@ -197,6 +203,7 @@ async function daemon(verbose: boolean): Promise<void> {
 	process.on("SIGINT", () => void graceful());
 	process.on("SIGTERM", () => void graceful());
 
+	writeFileSync(config.pidPath, String(process.pid));
 	await ipc.start();
 	await manager.start(
 		state,
