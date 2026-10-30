@@ -123,7 +123,13 @@ async function daemon(verbose: boolean): Promise<void> {
 			const params = p as Record<string, never>; // narrow per-method below
 			switch (method) {
 				case "ping":
-					return { state: "up", ingested };
+					return {
+						state: "up",
+						connectionState: manager.state,
+						connectionDetail: manager.detail,
+						ingested,
+						uptime: Math.round(process.uptime()),
+					};
 				case "send.text":
 					return service?.sendText(params.jid, params.text);
 				case "send.reply":

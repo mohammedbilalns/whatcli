@@ -42,8 +42,18 @@ export class WhatsAppManager {
 	private run?: Promise<void>;
 	//
 	private wake?: () => void;
+	private currentState: ManagerState = "connecting";
+	private currentDetail?: string;
 
 	constructor(private readonly options: ManagerOptions = {}) {}
+
+	get state(): ManagerState {
+		return this.currentState;
+	}
+
+	get detail(): string | undefined {
+		return this.currentDetail;
+	}
 
 	/** Register a handler that re-attaches to every new socket on reconnect. */
 	onSocket(handler: (sock: WASocket) => void): void {
@@ -159,6 +169,8 @@ export class WhatsAppManager {
 	}
 
 	private set(state: ManagerState, detail?: string): void {
+		this.currentState = state;
+		this.currentDetail = detail;
 		this.options.onStateChange?.(state, detail);
 	}
 }
