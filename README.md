@@ -4,6 +4,8 @@ A pure Command Line Interface (CLI) and background daemon for interacting with W
 
 **Note: WhatCLI is strictly a command-line tool. There are absolutely no plans to add any kind of GUI. It is designed to be composable, fast, terminal-native, and fully integrated with the Model Context Protocol (MCP) for AI agents.**
 
+📖 **[Read the Full Architecture Documentation](docs/ARCHITECTURE.md)** — Detailed diagrams, sequence workflows, database schemas, and IPC specifications.
+
 ---
 
 ## Features
@@ -188,6 +190,26 @@ wacli rule off 1
 wacli rule on 1
 wacli rule remove 1
 ```
+
+---
+
+## Architecture Overview
+
+```mermaid
+flowchart LR
+    CLI["CLI Client<br/>(wacli send, chats, ...)"] -->|"Read (<5ms)"| DB[("SQLite WAL DB<br/>data/wacli.db")]
+    CLI -->|"Action IPC"| Sock[("Unix Domain Socket<br/>data/wacli.sock")]
+    
+    MCP["AI Agents / MCP<br/>(Claude, Cursor, Pi)"] <-->|"stdio (JSON-RPC)"| MCPServer["WhatCLI MCP Server"]
+    MCPServer -->|"Read (<5ms)"| DB
+    MCPServer -->|"Action IPC"| Sock
+
+    Sock <--> Daemon["WhatCLI Daemon Service"]
+    Daemon -->|"Write (WAL)"| DB
+    Daemon <-->|"WebSocket"| WA["WhatsApp Web Servers"]
+```
+
+For detailed sequence diagrams, database schemas, and protocol specs, see the **[Architecture Documentation](docs/ARCHITECTURE.md)**.
 
 ---
 
