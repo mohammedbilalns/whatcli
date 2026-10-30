@@ -13,6 +13,8 @@ export function openDatabase(config: Config): Database.Database {
 	db.pragma("journal_mode = WAL");
 	db.pragma("synchronous = NORMAL");
 	db.pragma("temp_store = MEMORY");
+	db.pragma("busy_timeout = 5000");
+	db.pragma("cache_size = -64000"); // 64 MB page cache
 	migrate(db);
 	return db;
 }

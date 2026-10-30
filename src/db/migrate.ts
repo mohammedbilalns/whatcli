@@ -120,9 +120,25 @@ data TEXT NOT NULL
 			}
 		},
 	},
+	{
+		name: "008_performance_indexes",
+		up: (db) => {
+			db.exec(`
+CREATE INDEX IF NOT EXISTS idx_chats_last_message ON chats (last_message_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts (name);
+`);
+		},
+	},
 ];
 
 export function migrate(db: Database): void {
+	const currentVersion =
+		(db.pragma("user_version", { simple: true }) as number) ?? 0;
+	if (currentVersion >= migrations.length) {
+		return;
+	}
+
 	db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
 name       TEXT PRIMARY KEY,
 applied_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -145,4 +161,6 @@ applied_at TEXT NOT NULL DEFAULT (datetime('now'))
 			);
 		})();
 	}
+
+	db.pragma(`user_version = ${migrations.length}`);
 }

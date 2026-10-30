@@ -20,22 +20,34 @@ export class IpcClient {
 	request(
 		method: string,
 		params: Record<string, unknown> = {},
+		timeoutMs = 30_000,
 	): Promise<unknown> {
 		return new Promise((resolve, reject) => {
 			const s = net.connect(this.path, () => {
 				s.write(`${JSON.stringify({ id: 1, method, params })}\n`);
 			});
+			const timer = setTimeout(() => {
+				s.destroy();
+				reject(
+					new Error(`IPC request '${method}' timed out after ${timeoutMs}ms`),
+				);
+			}, timeoutMs).unref();
+
 			let buf = "";
 			s.on("data", (chunk) => {
 				buf += chunk;
 				const nl = buf.indexOf("\n");
 				if (nl < 0) return;
+				clearTimeout(timer);
 				const res = JSON.parse(buf.slice(0, nl)) as IpcResponse;
 				s.end();
 				if (res.ok) resolve(res.result);
 				else reject(new Error(res.error));
 			});
-			s.on("error", reject); // e.g. daemon died mid-request
+			s.on("error", (err) => {
+				clearTimeout(timer);
+				reject(err);
+			});
 		});
 	}
 }

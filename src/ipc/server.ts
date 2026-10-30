@@ -43,32 +43,35 @@ export class IpcServer {
 		let buf = "";
 		conn.on("data", (chunk) => {
 			buf += chunk;
-			const nl = buf.indexOf("\n");
-			if (nl < 0) return;
-			const line = buf.slice(0, nl);
-			buf = "";
+			let nl = buf.indexOf("\n");
+			while (nl >= 0) {
+				const line = buf.slice(0, nl).trim();
+				buf = buf.slice(nl + 1);
+				nl = buf.indexOf("\n");
+				if (!line) continue;
 
-			let req: IpcRequest;
-			try {
-				req = JSON.parse(line) as IpcRequest;
-			} catch {
-				conn.end();
-				return;
+				let req: IpcRequest;
+				try {
+					req = JSON.parse(line) as IpcRequest;
+				} catch {
+					conn.end();
+					return;
+				}
+
+				void this.handler(req.method, req.params ?? {})
+					.then((result) =>
+						conn.write(`${JSON.stringify({ id: req.id, ok: true, result })}\n`),
+					)
+					.catch((err) =>
+						conn.write(
+							`${JSON.stringify({
+								id: req.id,
+								ok: false,
+								error: String(err?.message ?? err),
+							})}\n`,
+						),
+					);
 			}
-
-			void this.handler(req.method, req.params ?? {})
-				.then((result) =>
-					conn.write(`${JSON.stringify({ id: req.id, ok: true, result })}\n`),
-				)
-				.catch((err) =>
-					conn.write(
-						`${JSON.stringify({
-							id: req.id,
-							ok: false,
-							error: String(err?.message ?? err),
-						})}\n`,
-					),
-				);
 		});
 		conn.on("error", () => {});
 	}

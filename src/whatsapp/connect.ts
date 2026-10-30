@@ -4,7 +4,7 @@ import {
 	DisconnectReason,
 	type WASocket,
 } from "@whiskeysockets/baileys";
-import { createWASocket } from "./socket.js";
+import { createWASocket, getLatestVersion } from "./socket.js";
 
 /**
  * Possible results while waiting for the WhatsApp connection.
@@ -46,8 +46,9 @@ export function createSocket(
 	getMessage?: (
 		key: import("@whiskeysockets/baileys").proto.IMessageKey,
 	) => Promise<import("@whiskeysockets/baileys").proto.IMessage | undefined>,
+	version?: [number, number, number],
 ): WASocket {
-	const sock = createWASocket(auth, getMessage);
+	const sock = createWASocket(auth, getMessage, version);
 	sock.ev.on("creds.update", saveCreds);
 	return sock;
 }
@@ -100,8 +101,9 @@ export async function connectAndWait(
 	) => Promise<import("@whiskeysockets/baileys").proto.IMessage | undefined>,
 ): Promise<{ sock: WASocket; outcome: ConnectionOutCome }> {
 	const MAX_RESTARTS = 5;
+	const version = await getLatestVersion();
 	for (let attempt = 0; ; attempt++) {
-		const sock = createSocket(auth, saveCreds, getMessage);
+		const sock = createSocket(auth, saveCreds, getMessage, version);
 		const outcome = await awaitOpenOrClose(sock, options);
 		if (outcome.status !== "closed") return { sock, outcome };
 		if (outcome.code !== DisconnectReason.loggedOut && attempt < MAX_RESTARTS)

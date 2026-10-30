@@ -13,6 +13,7 @@ import {
 	decideReconnect,
 	type ReconnectPolicy,
 } from "./reconnect.js";
+import { getLatestVersion } from "./socket.js";
 
 /**
  * State indicating the live status of the connection
@@ -82,11 +83,12 @@ export class WhatsAppManager {
 	): Promise<void> {
 		const policy = this.options.policy ?? DEFAULT_POLICY;
 		let attempt = 0;
+		const version = await getLatestVersion();
 
 		while (!this.stopping) {
 			this.set(attempt === 0 ? "connecting" : "reconnecting");
 
-			const sock = createSocket(auth, saveCreds, getMessage);
+			const sock = createSocket(auth, saveCreds, getMessage, version);
 			this.currentSocket = sock;
 			for (const handler of this.socketHandlers) handler(sock); // re-attach
 
