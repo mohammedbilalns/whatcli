@@ -19,6 +19,7 @@ import { registerSendCommand } from "../commands/send.js";
 import { registerSendDocumentCommand } from "../commands/send-document.js";
 import { registerSendImageCommand } from "../commands/send-image.js";
 import { registerStatusCommand } from "../commands/status.js";
+import { registerStopCommand } from "../commands/stop.js";
 
 // commands registry
 const commands = [
@@ -26,6 +27,7 @@ const commands = [
 	registerStatusCommand,
 	registerDoctorCommand,
 	registerDaemonCommand,
+	registerStopCommand,
 	registerLogoutCommand,
 	registerChatsCommand,
 	registerHistoryCommand,

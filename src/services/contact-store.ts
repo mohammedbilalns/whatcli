@@ -74,9 +74,11 @@ ORDER BY alias IS NULL, name IS NULL LIMIT 20
 
 	list(query?: string): ContactRow[] {
 		if (query) return this.findByText(query);
-		return this.db.prepare(`SELECT jid, phone, name, push_name, alias FROM contacts
+		return this.db
+			.prepare(`SELECT jid, phone, name, push_name, alias FROM contacts
 WHERE alias IS NOT NULL OR name IS NOT NULL
-ORDER BY alias IS NULL, name LIMIT 100`) as unknown as ContactRow[];
+ORDER BY alias IS NULL, name LIMIT 100`)
+			.all() as ContactRow[];
 	}
 
 	/** Best label for any JID (person or group) . */

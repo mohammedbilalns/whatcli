@@ -1,18 +1,25 @@
+import process from "node:process";
 import type { Command } from "commander";
 import { openDatabase } from "../db/database.js";
 import { ContactStore } from "../services/contact-store.js";
 import { loadConfig } from "../utils/config.js";
 import { formatMessage } from "../utils/format.js";
+import { printData, printInfo, printJson } from "../utils/output.js";
 import { jidLabel } from "../whatsapp/jid.js";
+
+interface SearchOptions {
+	json?: boolean;
+}
 
 export function registerSearchCommand(program: Command): void {
 	program
 		.command("search <text>")
 		.description("Search stored message text")
-		.action(handleSearch);
+		.option("--json", "output search results as JSON")
+		.action((text: string, opts: SearchOptions) => handleSearch(text, opts));
 }
 
-function handleSearch(text: string): void {
+function handleSearch(text: string, opts: SearchOptions): void {
 	const db = openDatabase(loadConfig());
 	const contacts = new ContactStore(db);
 	const rows = db
@@ -23,20 +30,31 @@ function handleSearch(text: string): void {
                   LIMIT 100`)
 		.all(`%${text}%`) as import("../services/message-store.js").MessageRow[];
 
-	if (rows.length === 0) {
-		console.log(`No stored messages matching "${text}".`);
+	if (opts.json) {
+		const jsonOutput = rows.map((row) => ({
+			id: row.id,
+			chatId: row.chat_id,
+			chatLabel: contacts.chatName(row.chat_id) ?? jidLabel(row.chat_id),
+			senderId: row.sender_id,
+			senderName: contacts.displayName(row.sender_id) ?? row.push_name ?? null,
+			fromMe: row.from_me === 1,
+			type: row.type,
+			text: row.text ?? null,
+			replyToId: row.reply_to_id ?? null,
+			timestamp: new Date(row.timestamp).toISOString(),
+		}));
+		printJson(jsonOutput);
 		db.close();
 		return;
 	}
 
-	const _chatNames = new Map(
-		(
-			db.prepare("SELECT jid, name FROM chats").all() as {
-				jid: string;
-				name: string | null;
-			}[]
-		).map((r) => [r.jid, r.name]),
-	);
+	if (rows.length === 0) {
+		printInfo(`No stored messages matching "${text}".`);
+		db.close();
+		process.exit(1);
+	}
+
+	const separator = process.stdout.isTTY ? " │ " : "\t";
 
 	for (const row of rows) {
 		const chatLabel = contacts.chatName(row.chat_id) ?? jidLabel(row.chat_id);
@@ -52,9 +70,8 @@ function handleSearch(text: string): void {
 			pushName: row.push_name ?? undefined,
 		};
 
-		console.log(
-			`${chatLabel} │ ${formatMessage(msg, (j) => contacts.displayName(j))}\n`,
-		);
+		const formatted = formatMessage(msg, (j) => contacts.displayName(j));
+		printData(`${chatLabel}${separator}${formatted}`);
 	}
 	db.close();
 }

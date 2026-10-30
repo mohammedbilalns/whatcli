@@ -1,16 +1,23 @@
+import process from "node:process";
 import type { Command } from "commander";
+import { printData, printJson } from "../utils/output.js";
 import { isGroupChat, jidLabel } from "../whatsapp/jid.js";
 import { resolveOrThrow, UserError, withSocket } from "./with-socket.js";
+
+interface GroupInfoOptions {
+	json?: boolean;
+}
 
 export function registerGroupCommand(program: Command): void {
 	const group = program.command("group").description("Group operations");
 	group
 		.command("info <name>")
 		.description("Show members and admins of a group (live fetch)")
-		.action((name: string) => groupInfo(name));
+		.option("--json", "output group info as JSON")
+		.action((name: string, opts: GroupInfoOptions) => groupInfo(name, opts));
 }
 
-async function groupInfo(name: string): Promise<void> {
+async function groupInfo(name: string, opts: GroupInfoOptions): Promise<void> {
 	await withSocket(async ({ service, store, db }) => {
 		const resolved = resolveOrThrow(db, name);
 		if (!isGroupChat(resolved.jid)) {
@@ -19,10 +26,9 @@ async function groupInfo(name: string): Promise<void> {
 
 		const info = await service.groupInfo(resolved.jid);
 		if (info.name && info.name !== resolved.jid) {
-			store.updateChatName(resolved.jid, info.name); // keep the stored name fresh
+			store.updateChatName(resolved.jid, info.name);
 		}
 
-		// Enrich participants from the contacts table (LID names live there)
 		const withNames = info.participants.map((p) => ({
 			...p,
 			name: store.contactName(p.jid) ?? undefined,
@@ -34,27 +40,52 @@ async function groupInfo(name: string): Promise<void> {
 			b: { name?: string; jid: string },
 		) => (a.name ?? a.jid).localeCompare(b.name ?? b.jid);
 
-		console.log(info.name);
-		console.log("─".repeat(50));
-		console.log(`Members: ${withNames.length}   Admins: ${admins.length}`);
-		if (info.announceOnly) console.log("🔒 announce-only (admins can send)");
-		if (info.description) {
-			const desc =
-				info.description.length > 120
-					? `${info.description.slice(0, 117)}…`
-					: info.description;
-			console.log(`\n${desc}`);
+		if (opts.json) {
+			printJson({
+				jid: resolved.jid,
+				name: info.name,
+				description: info.description ?? null,
+				announceOnly: Boolean(info.announceOnly),
+				memberCount: withNames.length,
+				adminCount: admins.length,
+				participants: withNames.map((p) => ({
+					jid: p.jid,
+					name: p.name ?? null,
+					role: p.role,
+				})),
+			});
+			return;
 		}
 
-		console.log("\nParticipants");
-		console.log("─".repeat(50));
-		for (const p of [...admins.sort(byName), ...members.sort(byName)]) {
-			const label = p.name ?? jidLabel(p.jid);
-			const role =
-				p.role === "member"
-					? ""
-					: `   ${p.role === "superadmin" ? "Owner" : "Admin"}`;
-			console.log(`${label.slice(0, 34).padEnd(36)}${role}`);
+		if (process.stdout.isTTY) {
+			printData(info.name);
+			printData("─".repeat(50));
+			printData(`Members: ${withNames.length}   Admins: ${admins.length}`);
+			if (info.announceOnly) printData("🔒 announce-only (admins can send)");
+			if (info.description) {
+				const desc =
+					info.description.length > 120
+						? `${info.description.slice(0, 117)}…`
+						: info.description;
+				printData(`\n${desc}`);
+			}
+
+			printData("\nParticipants");
+			printData("─".repeat(50));
+			for (const p of [...admins.sort(byName), ...members.sort(byName)]) {
+				const label = p.name ?? jidLabel(p.jid);
+				const role =
+					p.role === "member"
+						? ""
+						: `   ${p.role === "superadmin" ? "Owner" : "Admin"}`;
+				printData(`${label.slice(0, 34).padEnd(36)}${role}`);
+			}
+		} else {
+			// Tab-separated stream for Unix tools (awk, cut, grep)
+			for (const p of [...admins.sort(byName), ...members.sort(byName)]) {
+				const label = p.name ?? jidLabel(p.jid);
+				printData(`${p.jid}\t${p.role}\t${label}`);
+			}
 		}
 	});
 }

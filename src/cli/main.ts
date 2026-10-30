@@ -7,6 +7,25 @@ import { Command } from "commander";
 import { baileysLogger, logger } from "../utils/logger.js";
 import { registerCommands } from "./commands.js";
 
+// Gracefully handle broken pipes (e.g. wacli ... | head -n 5)
+process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+	if (err.code === "EPIPE") {
+		process.exit(0);
+	}
+});
+process.stderr.on("error", (err: NodeJS.ErrnoException) => {
+	if (err.code === "EPIPE") {
+		process.exit(0);
+	}
+});
+
+process.on("SIGINT", () => {
+	process.exit(130);
+});
+process.on("SIGTERM", () => {
+	process.exit(143);
+});
+
 const pkgPath = path.join(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"..",
@@ -37,7 +56,10 @@ registerCommands(program);
 
 try {
 	await program.parseAsync(process.argv);
-} catch (err) {
+} catch (err: unknown) {
+	if ((err as NodeJS.ErrnoException)?.code === "EPIPE") {
+		process.exit(0);
+	}
 	if (err instanceof Error) {
 		logger.error(err.message);
 		if (program.opts().debug) {

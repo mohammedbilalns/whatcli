@@ -7,6 +7,7 @@ import { MessageService } from "../services/message-service.js";
 import { MessageStore } from "../services/message-store.js";
 import type { Config } from "../utils/config.js";
 import { loadConfig } from "../utils/config.js";
+import { printError } from "../utils/output.js";
 import { WhatsAppClient } from "../whatsapp/client.js";
 import { connectAndWait } from "../whatsapp/connect.js";
 import { type Resolution, resolveChat } from "../whatsapp/jid.js";
@@ -54,14 +55,14 @@ export async function withSocket(
 			return;
 		} catch (err) {
 			if (!(err instanceof UserError)) throw err; // UserError prints below as usual
-			console.log(err.message);
+			printError(err.message);
 			process.exit(1);
 		}
 	}
 
 	const session = await loadSession(db);
 	if (!session.hasSession) {
-		console.log('Not logged in — run "wacli login" first.');
+		printError('Not logged in — run "wacli login" first.');
 		db.close();
 		process.exit(1);
 	}
@@ -74,7 +75,7 @@ export async function withSocket(
 	if (outcome.status !== "connected") {
 		const why =
 			outcome.status === "timeout" ? "timed out" : `code ${outcome.code}`;
-		console.log(`Could not reach WhatsApp (${why}).`);
+		printError(`Could not reach WhatsApp (${why}).`);
 		db.close();
 		process.exit(1);
 	}
@@ -98,10 +99,10 @@ export async function withSocket(
 		}
 	} catch (err) {
 		if (err instanceof UserError) {
-			console.log(err.message);
+			printError(err.message);
 			process.exit(1);
 		}
-		console.log(`❌ ${err instanceof Error ? err.message : err}`);
+		printError(err instanceof Error ? err.message : String(err));
 		process.exitCode = 1;
 	}
 }

@@ -46,7 +46,7 @@ updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 		name: "002_chats_alt_jid",
 		up: (db) => {
 			db.exec(`ALTER TABLE chats ADD COLUMN alt_jid TEXT;
-             CREATE INDEX idx_chats_alt ON chats (alt_jid);`);
+CREATE INDEX idx_chats_alt ON chats (alt_jid);`);
 		},
 	},
 	{
@@ -83,29 +83,29 @@ UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS 
 		name: "005_rules",
 		up: (db) => {
 			db.exec(`
-      CREATE TABLE rules (
-        id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        trigger     TEXT NOT NULL,
-        action      TEXT NOT NULL DEFAULT 'reply',
-        value       TEXT NOT NULL,
-        chat        TEXT NOT NULL DEFAULT '*',
-        enabled     INTEGER NOT NULL DEFAULT 1,
-        hit_count   INTEGER NOT NULL DEFAULT 0,
-        last_fired  TEXT,
-        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-      );
-    `);
+CREATE TABLE rules (
+id          INTEGER PRIMARY KEY AUTOINCREMENT,
+trigger     TEXT NOT NULL,
+action      TEXT NOT NULL DEFAULT 'reply',
+value       TEXT NOT NULL,
+chat        TEXT NOT NULL DEFAULT '*',
+enabled     INTEGER NOT NULL DEFAULT 1,
+hit_count   INTEGER NOT NULL DEFAULT 0,
+last_fired  TEXT,
+created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`);
 		},
 	},
 	{
 		name: "006_auth_state",
 		up: (db) => {
 			db.exec(`
-      CREATE TABLE auth_state (
-        name TEXT PRIMARY KEY,
-        data TEXT NOT NULL
-      );
-    `);
+CREATE TABLE auth_state (
+name TEXT PRIMARY KEY,
+data TEXT NOT NULL
+);
+`);
 		},
 	},
 	{
@@ -124,9 +124,9 @@ UPDATE contacts SET phone = jid WHERE jid LIKE '%@s.whatsapp.net%' AND phone IS 
 
 export function migrate(db: Database): void {
 	db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
-    name       TEXT PRIMARY KEY,
-    applied_at TEXT NOT NULL DEFAULT (datetime('now'))
-  )`);
+name       TEXT PRIMARY KEY,
+applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
 
 	const applied = new Set(
 		(

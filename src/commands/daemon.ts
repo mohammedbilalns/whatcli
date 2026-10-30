@@ -9,7 +9,7 @@ import { RuleEngine } from "../services/rule-engine.js";
 import { RuleStore } from "../services/rule-store.js";
 import { loadConfig } from "../utils/config.js";
 import { formatMessage } from "../utils/format.js";
-import { logger } from "../utils/logger.js";
+import { printError } from "../utils/output.js";
 import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { WhatsAppClient } from "../whatsapp/client.js";
 import { registerHistorySync } from "../whatsapp/history.js";
@@ -31,8 +31,9 @@ async function daemon(verbose: boolean): Promise<void> {
 	const config = loadConfig();
 	const db = openDatabase(config);
 	const { state, saveCreds } = await useSqliteAuthState(db);
-	if (!(state.creds.registered || !!state.creds.me?.id)) {
-		console.log('Not logged in — run "wacli login" first.');
+	if (!(state.creds.registered || Boolean(state.creds.me?.id))) {
+		printError('Not logged in — run "wacli login" first.');
+		db.close();
 		process.exit(1);
 	}
 
@@ -170,6 +171,7 @@ async function daemon(verbose: boolean): Promise<void> {
 		process.exit(0);
 	}
 	process.on("SIGINT", () => void graceful());
+	process.on("SIGTERM", () => void graceful());
 
 	await ipc.start();
 	await manager.start(

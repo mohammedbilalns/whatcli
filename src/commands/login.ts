@@ -30,7 +30,13 @@ async function login(): Promise<void> {
 		process.stdin.on("data", (key) => {
 			if (key === "q" || key === "Q" || key === "\u0003") {
 				spinner.stop();
-				console.log("\nExiting...");
+				if (process.stdin.isTTY) {
+					try {
+						process.stdin.setRawMode(false);
+					} catch {}
+				}
+				printInfo("Exiting...");
+				db.close();
 				process.exit(0);
 			}
 		});
