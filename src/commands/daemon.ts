@@ -59,7 +59,7 @@ async function daemon(verbose: boolean): Promise<void> {
 		service = new MessageService(new WhatsAppClient(sock), store);
 		const automation = new Automation(
 			new RuleEngine(
-				ruleStore.activeRules(),
+				() => ruleStore.activeRules(),
 				(jid) => contacts.displayName(jid) !== null,
 			),
 			ruleStore,
