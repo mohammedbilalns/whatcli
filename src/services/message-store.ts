@@ -319,6 +319,13 @@ WHERE c.jid = ?
 			.run(mediaJson, id);
 	}
 
+	updateMessageText(id: string, text: string): boolean {
+		return (
+			this.db.prepare("UPDATE messages SET text = ? WHERE id = ?").run(text, id)
+				.changes > 0
+		);
+	}
+
 	/** Stored groups only. */
 	listGroups(): ChatRow[] {
 		return this.db

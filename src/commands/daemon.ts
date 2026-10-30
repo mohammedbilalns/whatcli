@@ -92,6 +92,21 @@ async function daemon(verbose: boolean): Promise<void> {
 			log(`history sync: ${stored} messages, ${batch.chats.length} chats`);
 		});
 
+		sock.ev.on("messages.update", (updates) => {
+			for (const { key, update } of updates) {
+				if (!key.id) continue;
+				const newText =
+					update.message?.conversation ||
+					update.message?.extendedTextMessage?.text;
+				if (newText) {
+					const updated = store.updateMessageText(key.id, newText);
+					if (updated && verbose) {
+						log(`message edited: ${key.id}`);
+					}
+				}
+			}
+		});
+
 		sock.ev.on("contacts.upsert", (contacts_arr) => {
 			for (const c of contacts_arr) {
 				const name = c.name || c.notify || c.verifiedName;

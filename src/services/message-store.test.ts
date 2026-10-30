@@ -36,4 +36,17 @@ describe("MessageStore", () => {
 		expect(chats).toHaveLength(1);
 		expect(chats[0]?.name).toBe("Tester");
 	});
+
+	it("updates message text when edited", () => {
+		const db = new Database(":memory:");
+		migrate(db);
+		const store = new MessageStore(db);
+
+		store.saveMessage(fixture);
+		expect(store.getMessageById("TEST1")?.text).toBe("hello");
+
+		const updated = store.updateMessageText("TEST1", "hello (edited)");
+		expect(updated).toBe(true);
+		expect(store.getMessageById("TEST1")?.text).toBe("hello (edited)");
+	});
 });
