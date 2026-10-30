@@ -9,6 +9,7 @@ import { registerGroupsCommand } from "../commands/groups.js";
 import { registerHistoryCommand } from "../commands/history.js";
 import { registerLoginCommand } from "../commands/login.js";
 import { registerLogoutCommand } from "../commands/logout.js";
+import { registerMcpCommand } from "../commands/mcp.js";
 import { registerMediaCommand } from "../commands/media.js";
 import { registerReactCommand } from "../commands/react.js";
 import { registerReplyCommand } from "../commands/reply.js";
@@ -44,6 +45,7 @@ const commands = [
 	registerContactCommand,
 	registerRuleCommand,
 	registerRulesCommand,
+	registerMcpCommand,
 ];
 export function registerCommands(program: Command) {
 	for (const registerCommand of commands) {
