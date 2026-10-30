@@ -6,15 +6,20 @@ export type ReconnectDecision =
 	| { action: "wipe-and-stop"; reason: string };
 
 export interface ReconnectPolicy {
-	maxRetries: number;
-	baseDelayMs: 1_000;
-	maxDelayMs: 30_000;
+	maxRetries?: number;
+	baseDelayMs: number;
+	maxDelayMs: number;
 }
 
 export const DEFAULT_POLICY: ReconnectPolicy = {
 	maxRetries: 8,
 	baseDelayMs: 1_000,
 	maxDelayMs: 30_000,
+};
+
+export const DAEMON_POLICY: ReconnectPolicy = {
+	baseDelayMs: 1_000,
+	maxDelayMs: 60_000,
 };
 
 export function decideReconnect(
@@ -54,7 +59,7 @@ export function decideReconnect(
 	}
 
 	// Everything else.
-	if (attempt >= policy.maxRetries) {
+	if (policy.maxRetries !== undefined && attempt >= policy.maxRetries) {
 		return {
 			action: "stop",
 			reason: `gave up after ${attempt + 1} attempts (last code: ${code})`,

@@ -16,6 +16,7 @@ import { WhatsAppClient } from "../whatsapp/client.js";
 import { registerHistorySync } from "../whatsapp/history.js";
 import { type ManagerState, WhatsAppManager } from "../whatsapp/manager.js";
 import { registerMessageListener } from "../whatsapp/messages.js";
+import { DAEMON_POLICY } from "../whatsapp/reconnect.js";
 
 export function registerDaemonCommand(program: Command): void {
 	program
@@ -49,6 +50,7 @@ async function daemon(verbose: boolean): Promise<void> {
 	let service: MessageService | undefined;
 
 	const manager = new WhatsAppManager({
+		policy: DAEMON_POLICY,
 		onQr: () =>
 			log("server asked for a QR — session may be dead; re-login required"),
 		onStateChange: (s: ManagerState, detail?: string) =>
