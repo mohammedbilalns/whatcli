@@ -121,10 +121,7 @@ updated_at = datetime('now')
 			}
 			for (const c of batch.contacts) {
 				if (isGroupChat(c.jid)) continue;
-				let cName =
-					c.name ||
-					((c as Record<string, unknown>).notify as string) ||
-					((c as Record<string, unknown>).verifiedName as string);
+				let cName: string | undefined = c.name || c.notify || c.verifiedName;
 				if (cName && /^\+[\d∙]+$/.test(cName)) cName = undefined;
 				this.stmtUpsertContact.run(c.jid, cName ?? null);
 			}
@@ -297,7 +294,7 @@ WHERE c.jid = ?
 
 	getRawMessage(
 		id: string,
-	): import("@whiskeysockets/baileys").WAMessage | undefined {
+	): import("@whiskeysockets/baileys").proto.IMessage | undefined {
 		const row = this.db
 			.prepare("SELECT type, text, media_json FROM messages WHERE id = ?")
 			.get(id) as

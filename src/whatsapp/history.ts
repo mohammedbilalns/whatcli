@@ -1,8 +1,10 @@
 import {
+	type Contact,
 	isJidNewsletter,
 	isJidStatusBroadcast,
 	type WASocket,
 } from "@whiskeysockets/baileys";
+import type { Ora } from "ora";
 import type { Message } from "../models/message.js";
 import { parseMessage } from "./parser.js";
 
@@ -44,11 +46,11 @@ export function registerHistorySync(
 				.map((c) => ({ jid: String(c.id), name: c.name ?? undefined }))
 				.filter((c) => !skip(c.jid)),
 			contacts: (sync.contacts ?? [])
-				.map((c: Record<string, unknown>) => ({
+				.map((c) => ({
 					jid: String(c.id),
-					name: c.name ?? undefined,
-					notify: c.notify ?? undefined,
-					verifiedName: c.verifiedName ?? undefined,
+					name: c.name ? String(c.name) : undefined,
+					notify: c.notify ? String(c.notify) : undefined,
+					verifiedName: c.verifiedName ? String(c.verifiedName) : undefined,
 				}))
 				.filter((c) => !skip(c.jid)),
 			messages,
@@ -63,7 +65,7 @@ import { MessageStore } from "../services/message-store.js";
 export async function waitForHistorySync(
 	sock: WASocket,
 	db: Database,
-	spinner?: unknown,
+	spinner?: Ora,
 ): Promise<void> {
 	const store = new MessageStore(db);
 	const contactsStore = new ContactStore(db);
@@ -76,7 +78,7 @@ export async function waitForHistorySync(
 	if (spinner) spinner.start("Syncing history... (this may take a moment)");
 
 	// This listener just makes sure we catch basic profile updates if they arrive during sync.
-	const handleUpsert = (contacts_arr: Record<string, string>[]) => {
+	const handleUpsert = (contacts_arr: Contact[]) => {
 		for (const c of contacts_arr) {
 			const name = c.name || c.notify || c.verifiedName;
 			if (c.id && name) contactsStore.upsertName(c.id, name);

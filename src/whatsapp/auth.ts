@@ -3,6 +3,7 @@ import {
 	type AuthenticationState,
 	BufferJSON,
 	initAuthCreds,
+	type SignalDataTypeMap,
 } from "@whiskeysockets/baileys";
 import type { Database } from "better-sqlite3";
 
@@ -38,12 +39,15 @@ export async function useSqliteAuthState(
 		state: {
 			creds,
 			keys: {
-				get: async (type, ids) => {
-					const data: { [id: string]: unknown } = {};
+				get: async <T extends keyof SignalDataTypeMap>(
+					type: T,
+					ids: string[],
+				) => {
+					const data: { [id: string]: SignalDataTypeMap[T] } = {};
 					for (const id of ids) {
 						const value = readData(`${type}-${id}`);
 						if (value !== null) {
-							data[id] = value;
+							data[id] = value as SignalDataTypeMap[T];
 						}
 					}
 					return data;

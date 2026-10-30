@@ -93,7 +93,9 @@ async function status(opts: StatusOptions): Promise<void> {
 
 		if (outcome.status === "connected") {
 			const me = state.creds.me;
-			await sock.end(undefined);
+			try {
+				await sock.end(undefined);
+			} catch {}
 			closeDb();
 
 			if (opts.quiet) process.exit(0);

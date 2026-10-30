@@ -9,6 +9,7 @@ import { RuleEngine } from "../services/rule-engine.js";
 import { RuleStore } from "../services/rule-store.js";
 import { loadConfig } from "../utils/config.js";
 import { formatMessage } from "../utils/format.js";
+import { logger } from "../utils/logger.js";
 import { printError } from "../utils/output.js";
 import { useSqliteAuthState } from "../whatsapp/auth.js";
 import { WhatsAppClient } from "../whatsapp/client.js";
