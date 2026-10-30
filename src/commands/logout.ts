@@ -1,51 +1,80 @@
-import { rmSync } from 'node:fs';
-import type { Command } from 'commander';
-import { DisconnectReason } from '@whiskeysockets/baileys';
-import { loadConfig } from '../utils/config.js';
-import { connectAndWait } from '../whatsapp/connect.js';
-import { openDatabase } from '../db/database.js';
-import { useSqliteAuthState } from '../whatsapp/auth.js';
+import { DisconnectReason } from "@whiskeysockets/baileys";
+import type { Command } from "commander";
+import { openDatabase } from "../db/database.js";
+import { loadConfig } from "../utils/config.js";
+import {
+	printError,
+	printInfo,
+	printJson,
+	printSuccess,
+} from "../utils/output.js";
+import { useSqliteAuthState } from "../whatsapp/auth.js";
+import { connectAndWait } from "../whatsapp/connect.js";
 
-export function registerLogoutCommand(program: Command): void {
-  program
-    .command('logout')
-    .description('Log out this device and delete the saved session')
-    .action(() => logout());
+interface LogoutOptions {
+	quiet?: boolean;
+	json?: boolean;
 }
 
-async function logout(): Promise<void> {
-  const config = loadConfig();
-  const db = openDatabase(config);
-  const { state, saveCreds } = await useSqliteAuthState(db);
+export function registerLogoutCommand(program: Command): void {
+	program
+		.command("logout")
+		.description("Log out this device and delete the saved session")
+		.option("-q, --quiet", "suppress output")
+		.option("--json", "output result as JSON")
+		.action((opts: LogoutOptions) => logout(opts));
+}
 
-  const hasSession = state.creds.registered || !!state.creds.me?.id;
-  if (!hasSession) {
-    console.log('Not logged in — nothing to do.');
-    process.exit(0);
-  }
+async function logout(opts: LogoutOptions = {}): Promise<void> {
+	const config = loadConfig();
+	const db = openDatabase(config);
+	const { state, saveCreds } = await useSqliteAuthState(db);
 
-  console.log('Logging out…');
-  const { sock, outcome } = await connectAndWait(state, saveCreds, { timeoutMs: 30_000 });
+	const hasSession = state.creds.registered || Boolean(state.creds.me?.id);
+	if (!hasSession) {
+		db.close();
+		if (opts.json) {
+			printJson({ loggedOut: true, status: "not_logged_in" });
+			process.exit(0);
+		}
+		printInfo("Not logged in — nothing to do.");
+		process.exit(0);
+	}
 
-  if (outcome.status === 'connected') {
-    try {
-      await sock.logout(); // server-side: tells WhatsApp to unlink this device
-    } catch {
-      console.log('WhatsApp did not confirm the logout (session already invalid?).');
-      console.log('If this device still shows under Linked Devices, remove it on the phone.');
-    }
-  } else if (outcome.status === 'closed' && outcome.code === DisconnectReason.loggedOut) {
-    console.log('Session was already invalidated (logged out from the phone).');
-  } else {
-    const code = outcome.status === 'closed' ? outcome.code : 'timeout';
-    console.log(`Could not reach WhatsApp (code ${code}).`);
-    console.log('Removing the local session anyway — check Linked Devices on the phone');
-    console.log('if this device still appears there.');
-  }
+	if (!opts.quiet && !opts.json) {
+		printInfo("Logging out…");
+	}
+	const { sock, outcome } = await connectAndWait(state, saveCreds, {
+		timeoutMs: 30_000,
+	});
 
-  db.prepare('DELETE FROM auth_state').run();
-  db.close();
-  console.log('\n Logged out. Local credentials deleted.');
-  console.log('Run "wacli login" to connect again.');
-  process.exit(0);
+	if (outcome.status === "connected") {
+		try {
+			await sock.logout();
+		} catch {
+			if (!opts.quiet && !opts.json) {
+				printError(
+					"WhatsApp did not confirm the logout (session already invalid?).",
+				);
+			}
+		}
+	} else if (
+		outcome.status === "closed" &&
+		outcome.code === DisconnectReason.loggedOut
+	) {
+		if (!opts.quiet && !opts.json) {
+			printInfo("Session was already invalidated (logged out from the phone).");
+		}
+	}
+
+	db.prepare("DELETE FROM auth_state").run();
+	db.close();
+
+	if (opts.json) {
+		printJson({ loggedOut: true, status: "success" });
+		process.exit(0);
+	}
+
+	printSuccess("Logged out. Local credentials deleted.", opts.quiet);
+	process.exit(0);
 }

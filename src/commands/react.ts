@@ -1,32 +1,70 @@
-import type { Command } from 'commander';
-import { withSocket, resolveOrThrow, UserError } from './with-socket.js';
+import type { Command } from "commander";
+import { printJson, printSuccess } from "../utils/output.js";
+import { resolveOrThrow, UserError, withSocket } from "./with-socket.js";
 
-export function registerReactCommand(program: Command): void {
-  program
-    .command('react <name> <messageId> <emoji>')
-    .description('React to a message (empty string "" removes the reaction)')
-    .action((name: string, messageId: string, emoji: string) => react(name, messageId, emoji));
+interface ReactOptions {
+	quiet?: boolean;
+	json?: boolean;
 }
 
-async function react(name: string, messageId: string, emoji: string): Promise<void> {
-  if (emoji.length > 8) throw new UserError('That does not look like a single emoji.'); // emoji can be multi-codepoint
+export function registerReactCommand(program: Command): void {
+	program
+		.command("react <name> <messageId> <emoji>")
+		.description('React to a message (empty string "" removes the reaction)')
+		.option("-q, --quiet", "suppress confirmation message")
+		.option("--json", "output result as JSON")
+		.action(
+			(name: string, messageId: string, emoji: string, opts: ReactOptions) =>
+				react(name, messageId, emoji, opts),
+		);
+}
 
-  await withSocket(async ({ service, store, db }) => {
-    const resolved = resolveOrThrow(db, name);
+async function react(
+	name: string,
+	messageId: string,
+	emoji: string,
+	opts: ReactOptions,
+): Promise<void> {
+	if (emoji.length > 8)
+		throw new UserError("That does not look like a single emoji."); // emoji can be multi-codepoint
 
-    const row = store.getMessageById(messageId);
-    if (!row) throw new UserError(`No stored message with id ${messageId} — try "wacli history ${name} --ids".`);
-    if (row.chat_id !== resolved.jid) {
-      throw new UserError(`That message belongs to a different chat than "${name}".`);
-    }
+	await withSocket(async ({ service, store, db }) => {
+		const resolved = resolveOrThrow(db, name);
 
-    await service.sendReaction(resolved.jid, {
-      id: row.id,
-      fromMe: row.from_me === 1,
-      senderId: row.sender_id,
-      text: row.text ?? undefined,
-    }, emoji);
+		const row = store.getMessageById(messageId);
+		if (!row) {
+			throw new UserError(
+				`No stored message with id ${messageId} — try "wacli history ${name} --ids".`,
+			);
+		}
+		if (row.chat_id !== resolved.jid) {
+			throw new UserError(
+				`That message belongs to a different chat than "${name}".`,
+			);
+		}
 
-    console.log(`✅ Reacted ${emoji} in ${resolved.label}`);
-  });
+		await service.sendReaction(
+			resolved.jid,
+			{
+				id: row.id,
+				fromMe: row.from_me === 1,
+				senderId: row.sender_id,
+				text: row.text ?? undefined,
+			},
+			emoji,
+		);
+
+		if (opts.json) {
+			printJson({
+				targetId: row.id,
+				chat: resolved.label,
+				jid: resolved.jid,
+				reaction: emoji,
+				status: "reacted",
+			});
+			return;
+		}
+
+		printSuccess(`Reacted ${emoji} in ${resolved.label}`, opts.quiet);
+	});
 }
